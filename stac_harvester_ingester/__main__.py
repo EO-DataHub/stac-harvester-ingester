@@ -49,8 +49,8 @@ def main():
         s3 = boto3.resource("s3")
 
     pulsar_url = os.environ.get("PULSAR_URL")
-    client = Client(pulsar_url)
-    consumer = client.subscribe(topic="transformed", subscription_name="stac-harvester-subscription")
+    pulsar_client = Client(pulsar_url)
+    consumer = pulsar_client.subscribe(topic="transformed", subscription_name="stac-harvester-subscription")
 
     config.load_kube_config()
 
