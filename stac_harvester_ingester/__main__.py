@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -54,46 +55,29 @@ def main():
         try:
             logging.info(f"Parsing harvested message {msg.data()}")
 
-            bucket = s3.Bucket(os.environ["CONFIGURATION_BUCKET"])
-            for file in bucket.objects.filter(Prefix=os.environ["CONFIGURATION_PREFIX"]):
-                catalogue = json.loads(file.get()["Body"].read())
+            data = msg.data().decode("utf-8")
+            data_dict = json.loads(data.replace("'", '"'))
+            bucket_name = data_dict.get("bucket_name")
 
-                catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
+            output_data = copy.deepcopy(data_dict)
+            output_data["added_keys"] = []
+            output_data["updated_keys"] = []
+            output_data["deleted_keys"] = []
 
-                create_custom_resource(catalogue)
+            bucket = s3.Bucket(bucket_name)
+            for key in output_data["updated_keys"] + output_data["added_keys"]:
+                for file in bucket.objects.filter(Prefix=key):
+                    catalogue = json.loads(file.get()["Body"].read())
 
-                api = client.CustomObjectsApi()
-                resource = create_custom_resource(catalogue)
+                    catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
 
-                # create the resource
-                try:
-                    api.create_namespaced_custom_object(
-                        group="core.telespazio-uk.io",
-                        version="v1",
-                        namespace="workspaces",
-                        plural="stac-harvesters",
-                        body=resource,
-                    )
-                    print("Resource created")
-                except client.exceptions.ApiException as e:
-                    if e.status == 409:  # already exists
-                        resource = api.get_namespaced_custom_object(
-                            group="core.telespazio-uk.io",
-                            version="v1",
-                            name=catalogue["pod_name"],
-                            namespace="workspaces",
-                            plural="stac-harvesters",
-                        )
+                    create_custom_resource(catalogue)
 
-                        api.delete_namespaced_custom_object(
-                            group="core.telespazio-uk.io",
-                            version="v1",
-                            name=catalogue["pod_name"],
-                            namespace="workspaces",
-                            plural="stac-harvesters",
-                            body=client.V1DeleteOptions(),
-                        )
+                    api = client.CustomObjectsApi()
+                    resource = create_custom_resource(catalogue)
 
+                    # create the resource
+                    try:
                         api.create_namespaced_custom_object(
                             group="core.telespazio-uk.io",
                             version="v1",
@@ -102,8 +86,35 @@ def main():
                             body=resource,
                         )
                         print("Resource created")
-                    else:
-                        raise
+                    except client.exceptions.ApiException as e:
+                        if e.status == 409:  # already exists
+                            resource = api.get_namespaced_custom_object(
+                                group="core.telespazio-uk.io",
+                                version="v1",
+                                name=catalogue["pod_name"],
+                                namespace="workspaces",
+                                plural="stac-harvesters",
+                            )
+
+                            api.delete_namespaced_custom_object(
+                                group="core.telespazio-uk.io",
+                                version="v1",
+                                name=catalogue["pod_name"],
+                                namespace="workspaces",
+                                plural="stac-harvesters",
+                                body=client.V1DeleteOptions(),
+                            )
+
+                            api.create_namespaced_custom_object(
+                                group="core.telespazio-uk.io",
+                                version="v1",
+                                namespace="workspaces",
+                                plural="stac-harvesters",
+                                body=resource,
+                            )
+                            print("Resource created")
+                        else:
+                            raise
 
         except Exception as e:
             logging.error(f"Error occurred during harvest: {e}")
