@@ -9,10 +9,6 @@ import boto3
 from kubernetes import client, config
 from pulsar import Client
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--s3_bucket", help="Configuration bucket", type=str)
-parser.add_argument("--s3_prefix", help="Prefix", type=str)
-args = parser.parse_args()
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
@@ -59,8 +55,8 @@ def main():
         try:
             logging.info(f"Parsing harvested message {msg.data()}")
 
-            bucket = s3.Bucket(args.s3_bucket)
-            for file in bucket.objects.filter(Prefix=args.s3_prefix):
+            bucket = s3.Bucket(os.environ["CONFIGURATION_BUCKET"])
+            for file in bucket.objects.filter(Prefix=os.environ["CONFIGURATION_PREFIX"]):
                 catalogue = json.loads(file.get()["Body"].read())
 
                 catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
