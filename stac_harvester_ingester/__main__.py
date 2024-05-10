@@ -9,7 +9,6 @@ import boto3
 from kubernetes import client, config
 from pulsar import Client
 
-
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
