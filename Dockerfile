@@ -10,10 +10,10 @@ RUN apt-get install --yes --quiet --no-install-recommends \
 
 RUN python -m pip install --upgrade pip
 
-WORKDIR /harvest_transformer
+WORKDIR /stac_harvester_ingester
 ADD LICENSE requirements.txt ./
-ADD harvest_transformer ./harvest_transformer/
+ADD stac_harvester_ingester ./stac_harvester_ingester/
 ADD pyproject.toml ./
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r requirements.txt .
 
-ENTRYPOINT ["python", "-m", "harvest_transformer"]
+ENTRYPOINT ["python", "-m", "stac_harvester_ingester"]
