@@ -46,7 +46,9 @@ def main():
 
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
-    consumer = pulsar_client.subscribe(topic="transformed", subscription_name="stac-harvester-subscription")
+    consumer = pulsar_client.subscribe(
+        topic="transformed", subscription_name="stac-harvester-subscription"
+    )
 
     config.load_kube_config()
 
