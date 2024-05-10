@@ -12,14 +12,14 @@ from pulsar import Client
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
-def create_custom_resource(catalogue):
+def create_custom_resource(catalogue, bucket_name):
     return {
         "apiVersion": "core.telespazio-uk.io/v1",
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["pod_name"]},
         "spec": {
-            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {os.environ['CONFIGURATION_BUCKET']} {catalogue['limit']}",  # noqa: E501
-            "image": "my-awesome-cron-image",
+            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  # noqa: E501
+            "image": os.environ['STAC_HARVESTER_IMAGE_URL'],
         },
     }
 
@@ -75,7 +75,7 @@ def main():
                     create_custom_resource(catalogue)
 
                     api = client.CustomObjectsApi()
-                    resource = create_custom_resource(catalogue)
+                    resource = create_custom_resource(catalogue, bucket_name)
 
                     # create the resource
                     try:
