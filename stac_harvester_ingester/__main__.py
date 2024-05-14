@@ -63,10 +63,16 @@ def main():
     else:
         s3 = boto3.client("s3")
 
+    if os.getenv("TOPIC"):
+        identifier = "_" + os.getenv("TOPIC")
+    else:
+        identifier = ""
+
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
     consumer = pulsar_client.subscribe(
-        topic="transformed", subscription_name="stac-harvester-subscription"
+        # topic="transformed", subscription_name=f"harvester-subscription{identifier}"
+        topic="transformed", subscription_name=f"transformer{identifier}"
     )
 
     plural = "stac-harvesters"
