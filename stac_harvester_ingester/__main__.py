@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import traceback
 from urllib.parse import urlparse
 
 import boto3
@@ -122,6 +123,7 @@ def main():
                         raise
         except Exception as e:
             logging.error(f"Error occurred during harvest: {e}")
+            traceback.format_exc()
         finally:
             consumer.acknowledge(msg)
 
