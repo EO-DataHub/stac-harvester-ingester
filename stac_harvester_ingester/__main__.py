@@ -71,6 +71,7 @@ def main():
                     catalogue = json.loads(file.get()["Body"].read())
 
                     catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
+                    logging.info(f"Pod: {catalogue['pod_name']}")
 
                     api = client.CustomObjectsApi()
                     resource = create_custom_resource(catalogue, bucket_name)
@@ -84,9 +85,10 @@ def main():
                             plural="stac-harvesters",
                             body=resource,
                         )
-                        print("Resource created")
+                        logging.info("Resource created")
                     except client.exceptions.ApiException as e:
                         if e.status == 409:  # already exists
+                            logging.info("Resource already exists. Regenerating")
                             resource = api.get_namespaced_custom_object(
                                 group="core.telespazio-uk.io",
                                 version="v1",
@@ -111,7 +113,7 @@ def main():
                                 plural="stac-harvesters",
                                 body=resource,
                             )
-                            print("Resource created")
+                            logging.info("Resource created")
                         else:
                             raise
 
