@@ -37,10 +37,10 @@ def main():
             aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
             aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
         )
-        s3 = session.resource("s3")
+        s3 = session.client("s3")
 
     else:
-        s3 = boto3.resource("s3")
+        s3 = boto3.client("s3")
 
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
@@ -61,22 +61,51 @@ def main():
             bucket_name = data_dict.get("bucket_name")
             logging.info("CCCCCCCCCCCCCCCCCC")
 
-            bucket = s3.Bucket(bucket_name)
-            logging.info("AAAAAAAAAAAAAAAAAAAAA")
             for key in data_dict["updated_keys"] + data_dict["added_keys"]:
                 print("key: " + key)
-                for file in bucket.objects.filter(Prefix=key):
-                    print("file: " + file)
-                    catalogue = json.loads(file.get()["Body"].read())
 
-                    catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
-                    logging.info(f"Pod: {catalogue['pod_name']}")
+                data = s3.get_object(Bucket=bucket_name, Key=key)
+                print("BBBBBBBBBBBBB")
+                contents = data['Body'].read().decode("utf-8")
+                print("AAAAAAAAAAAAAAA")
+                catalogue = json.loads(contents)
 
-                    api = client.CustomObjectsApi()
-                    resource = create_custom_resource(catalogue, bucket_name)
+                catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
+                logging.info(f"Pod: {catalogue['pod_name']}")
 
-                    # create the resource
-                    try:
+                api = client.CustomObjectsApi()
+                resource = create_custom_resource(catalogue, bucket_name)
+
+                # create the resource
+                try:
+                    api.create_namespaced_custom_object(
+                        group="core.telespazio-uk.io",
+                        version="v1",
+                        namespace="workspaces",
+                        plural="stac-harvesters",
+                        body=resource,
+                    )
+                    logging.info("Resource created")
+                except client.exceptions.ApiException as e:
+                    if e.status == 409:  # already exists
+                        logging.info("Resource already exists. Regenerating")
+                        resource = api.get_namespaced_custom_object(
+                            group="core.telespazio-uk.io",
+                            version="v1",
+                            name=catalogue["pod_name"],
+                            namespace="workspaces",
+                            plural="stac-harvesters",
+                        )
+
+                        api.delete_namespaced_custom_object(
+                            group="core.telespazio-uk.io",
+                            version="v1",
+                            name=catalogue["pod_name"],
+                            namespace="workspaces",
+                            plural="stac-harvesters",
+                            body=client.V1DeleteOptions(),
+                        )
+
                         api.create_namespaced_custom_object(
                             group="core.telespazio-uk.io",
                             version="v1",
@@ -85,36 +114,8 @@ def main():
                             body=resource,
                         )
                         logging.info("Resource created")
-                    except client.exceptions.ApiException as e:
-                        if e.status == 409:  # already exists
-                            logging.info("Resource already exists. Regenerating")
-                            resource = api.get_namespaced_custom_object(
-                                group="core.telespazio-uk.io",
-                                version="v1",
-                                name=catalogue["pod_name"],
-                                namespace="workspaces",
-                                plural="stac-harvesters",
-                            )
-
-                            api.delete_namespaced_custom_object(
-                                group="core.telespazio-uk.io",
-                                version="v1",
-                                name=catalogue["pod_name"],
-                                namespace="workspaces",
-                                plural="stac-harvesters",
-                                body=client.V1DeleteOptions(),
-                            )
-
-                            api.create_namespaced_custom_object(
-                                group="core.telespazio-uk.io",
-                                version="v1",
-                                namespace="workspaces",
-                                plural="stac-harvesters",
-                                body=resource,
-                            )
-                            logging.info("Resource created")
-                        else:
-                            raise
+                    else:
+                        raise
 
         except Exception as e:
             logging.error(f"Error occurred during harvest: {e}")
