@@ -1,9 +1,7 @@
-import argparse
 import json
 import logging
 import os
 import re
-import urllib
 from urllib.parse import urlparse
 
 import boto3
