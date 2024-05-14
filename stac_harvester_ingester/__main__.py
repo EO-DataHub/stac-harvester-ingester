@@ -72,8 +72,6 @@ def main():
 
                     catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
 
-                    create_custom_resource(catalogue)
-
                     api = client.CustomObjectsApi()
                     resource = create_custom_resource(catalogue, bucket_name)
 
