@@ -67,7 +67,9 @@ def main():
 
             bucket = s3.Bucket(bucket_name)
             for key in output_data["updated_keys"] + output_data["added_keys"]:
+                print('key: ' + key)
                 for file in bucket.objects.filter(Prefix=key):
+                    print('file: ' + file)
                     catalogue = json.loads(file.get()["Body"].read())
 
                     catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
