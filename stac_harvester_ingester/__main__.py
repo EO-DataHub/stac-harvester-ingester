@@ -122,7 +122,7 @@ def main():
                     else:
                         raise
         except Exception as e:
-            logging.info(f"Error occurred during harvest")
+            logging.info("Error occurred during harvest")
             traceback.format_exc()
             logging.error(f"Error: {e}")
         finally:
