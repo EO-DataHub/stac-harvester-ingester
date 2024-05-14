@@ -50,7 +50,7 @@ def create_custom_resource(catalogue, bucket_name):
 
 
 def main():
-    config.load_kube_config()
+    config.load_incluster_config()
 
     if os.getenv("AWS_ACCESS_KEY") and os.getenv("AWS_SECRET_ACCESS_KEY"):
         session = boto3.session.Session(
