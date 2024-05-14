@@ -82,13 +82,15 @@ def main():
             bucket_name = data_dict.get("bucket_name")
 
             for key in data_dict["added_keys"] + data_dict["updated_keys"]:
+                logging.info(f"Key: {key}")
                 data = s3.get_object(Bucket=bucket_name, Key=key)
-                contents = data["Body"].read()
-                catalogue = contents.decode("utf-8")
+                contents = data["Body"].read().decode("utf-8")
+                catalogue = json.loads(contents)
 
                 api = client.CustomObjectsApi()
 
                 catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
+                logging.info(f"Creating resource: {catalogue['pod_name']}")
 
                 resource = create_custom_resource(catalogue, bucket_name)
 
