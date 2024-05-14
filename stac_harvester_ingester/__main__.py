@@ -66,7 +66,7 @@ def main():
 
                 data = s3.get_object(Bucket=bucket_name, Key=key)
                 print("BBBBBBBBBBBBB")
-                contents = data['Body'].read().decode("utf-8")
+                contents = data["Body"].read().decode("utf-8")
                 print("AAAAAAAAAAAAAAA")
                 catalogue = json.loads(contents)
 
