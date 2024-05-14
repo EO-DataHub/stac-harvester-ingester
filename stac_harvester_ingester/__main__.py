@@ -59,13 +59,16 @@ def main():
             data = msg.data().decode("utf-8")
             data_dict = json.loads(data.replace("'", '"'))
             bucket_name = data_dict.get("bucket_name")
+            print('CCCCCCCCCCCCCCCCCC')
 
             output_data = copy.deepcopy(data_dict)
             output_data["added_keys"] = []
             output_data["updated_keys"] = []
             output_data["deleted_keys"] = []
+            print('BBBBBBBBBBBBBBBBBb')
 
             bucket = s3.Bucket(bucket_name)
+            print('AAAAAAAAAAAAAAAAAAAAA')
             for key in output_data["updated_keys"] + output_data["added_keys"]:
                 print("key: " + key)
                 for file in bucket.objects.filter(Prefix=key):
