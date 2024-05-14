@@ -5,11 +5,10 @@ import os
 import re
 import urllib
 from urllib.parse import urlparse
-from pulsar import Client
 
 import boto3
-
 from kubernetes import client, config
+from pulsar import Client
 
 # Initiate Pulsar
 pulsar_url = os.environ.get("PULSAR_URL")
@@ -18,6 +17,7 @@ consumer = pulsar_client.subscribe(topic="harvested", subscription_name="transfo
 producer = pulsar_client.create_producer(topic="transformed", producer_name="transformer")
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+
 
 def create_custom_resource(catalogue):
     return {
@@ -38,15 +38,16 @@ def get_name(url):
 
     return re.sub(r"[^0-9a-z.-]", r"", name)
 
+
 def create_custom_resource(catalogue, bucket_name):
     return {
         "apiVersion": "core.telespazio-uk.io/v1",
         "kind": "STACHarvester",
-        "metadata": {"name": catalogue['pod_name']},
+        "metadata": {"name": catalogue["pod_name"]},
         "spec": {
             "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",
             "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
-        }
+        },
     }
 
 
@@ -70,7 +71,7 @@ def main():
     )
 
     plural = "stac-harvesters"
-    namespace = os.environ['NAMESPACE_NAME']
+    namespace = os.environ["NAMESPACE_NAME"]
 
     while True:
         msg = consumer.receive()
@@ -81,15 +82,14 @@ def main():
             data_dict = json.loads(data.replace("'", '"'))
             bucket_name = data_dict.get("bucket_name")
 
-            for key in data_dict['added_keys'] + data_dict['updated_keys']:
-
+            for key in data_dict["added_keys"] + data_dict["updated_keys"]:
                 data = s3.get_object(Bucket=bucket_name, Key=key)
-                contents = data['Body'].read()
+                contents = data["Body"].read()
                 catalogue = contents.decode("utf-8")
 
                 api = client.CustomObjectsApi()
 
-                catalogue['pod_name'] = f"stac-harvester-{get_name(catalogue['url'])}"
+                catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
 
                 resource = create_custom_resource(catalogue, bucket_name)
 
@@ -107,7 +107,7 @@ def main():
                         api.delete_namespaced_custom_object(
                             group="core.telespazio-uk.io",
                             version="v1",
-                            name=catalogue['pod_name'],
+                            name=catalogue["pod_name"],
                             namespace=namespace,
                             plural=plural,
                             body=client.V1DeleteOptions(),
