@@ -62,15 +62,9 @@ def main():
             bucket_name = data_dict.get("bucket_name")
             logging.info("CCCCCCCCCCCCCCCCCC")
 
-            output_data = copy.deepcopy(data_dict)
-            output_data["added_keys"] = []
-            output_data["updated_keys"] = []
-            output_data["deleted_keys"] = []
-            logging.info("BBBBBBBBBBBBBBBBBb")
-
             bucket = s3.Bucket(bucket_name)
             logging.info("AAAAAAAAAAAAAAAAAAAAA")
-            for key in output_data["updated_keys"] + output_data["added_keys"]:
+            for key in data_dict["updated_keys"] + data_dict["added_keys"]:
                 print("key: " + key)
                 for file in bucket.objects.filter(Prefix=key):
                     print("file: " + file)
