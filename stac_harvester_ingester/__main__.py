@@ -6,7 +6,7 @@ import re
 from urllib.parse import urlparse
 
 import boto3
-from kubernetes import client, config
+from kubernetes import client  # , config
 from pulsar import Client
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
