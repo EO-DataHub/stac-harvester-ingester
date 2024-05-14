@@ -49,7 +49,7 @@ def main():
         topic="transformed", subscription_name="stac-harvester-subscription"
     )
 
-    config.load_kube_config()
+    # config.load_kube_config()
 
     while True:
         msg = consumer.receive()
