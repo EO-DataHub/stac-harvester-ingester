@@ -81,7 +81,7 @@ def main():
                     api.create_namespaced_custom_object(
                         group="core.telespazio-uk.io",
                         version="v1",
-                        namespace="workspaces",
+                        namespace="rc",
                         plural="stac-harvesters",
                         body=resource,
                     )
@@ -93,7 +93,7 @@ def main():
                             group="core.telespazio-uk.io",
                             version="v1",
                             name=catalogue["pod_name"],
-                            namespace="workspaces",
+                            namespace="rc",
                             plural="stac-harvesters",
                         )
 
@@ -101,7 +101,7 @@ def main():
                             group="core.telespazio-uk.io",
                             version="v1",
                             name=catalogue["pod_name"],
-                            namespace="workspaces",
+                            namespace="rc",
                             plural="stac-harvesters",
                             body=client.V1DeleteOptions(),
                         )
@@ -109,7 +109,7 @@ def main():
                         api.create_namespaced_custom_object(
                             group="core.telespazio-uk.io",
                             version="v1",
-                            namespace="workspaces",
+                            namespace="rc",
                             plural="stac-harvesters",
                             body=resource,
                         )
