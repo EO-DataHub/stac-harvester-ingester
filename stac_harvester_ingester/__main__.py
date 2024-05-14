@@ -43,7 +43,7 @@ def create_custom_resource(catalogue, bucket_name):
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["pod_name"]},
         "spec": {
-            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  #noqa: E501
+            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  # noqa: E501
             "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
         },
     }
