@@ -71,9 +71,9 @@ def main():
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
     consumer = pulsar_client.subscribe(
-        # topic="transformed", subscription_name=f"harvester-subscription{identifier}"
         topic="transformed", subscription_name=f"transformer{identifier}"
     )
+    # topic="transformed", subscription_name=f"harvester-subscription{identifier}"
 
     plural = "stac-harvesters"
     namespace = os.environ["NAMESPACE_NAME"]
