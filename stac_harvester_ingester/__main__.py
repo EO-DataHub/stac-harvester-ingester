@@ -73,7 +73,7 @@ def main():
             logging.info(f"Parsing harvested message {msg.data()}")
 
             data = msg.data().decode("utf-8")
-            data_dict = json.loads(data.replace("'", '"'))
+            data_dict = json.loads(data)
             bucket_name = data_dict.get("bucket_name")
 
             for key in data_dict["added_keys"] + data_dict["updated_keys"]:
