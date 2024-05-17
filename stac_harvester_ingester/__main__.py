@@ -12,8 +12,6 @@ from pulsar import Client
 # Initiate Pulsar
 pulsar_url = os.environ.get("PULSAR_URL")
 pulsar_client = Client(pulsar_url)
-consumer = pulsar_client.subscribe(topic="harvested", subscription_name="transformer-subscription")
-producer = pulsar_client.create_producer(topic="transformed", producer_name="transformer")
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
