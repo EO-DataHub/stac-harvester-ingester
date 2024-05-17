@@ -30,8 +30,40 @@ def create_custom_resource(catalogue, bucket_name):
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["pod_name"]},
         "spec": {
-            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  # noqa: E501
-            "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
+            "template": {
+                "spec": {
+                    "serviceAccountName": "resource-catalogue",
+                    "automountServiceAccountToken": "true",
+                    "containers": [
+                        {
+                            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  # noqa: E501
+                            "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
+                            "securityContext": {"runAsUser": "50000", "runAsGroup": "50000"},
+                            "env": [
+                                {"name": "app-id-file", "value": "app-id"},
+                                {"name": "app-private-key-file", "value": "app-private-key"},
+                                {
+                                    "name": "PULSAR_URL",
+                                    "value": "pulsar://pulsar-broker.pulsar:6650",
+                                },
+                            ],
+                            "volumeMounts": [{"name": "efs", "mountPath": "/mnt/repo-cache"}],
+                        }
+                    ],
+                    "volumes": [
+                        {"name": "github-creds", "secret": {"secretName": "github-creds"}},
+                        {"name": "temporary-storage", "emptyDir": "{}"},
+                        {
+                            "name": "efs",
+                            "persistentVolumeClaim": {
+                                "claimName": "resource-catalogue-cache-claim-efs"
+                            },
+                        },
+                    ],
+                    "restartPolicy": "Never",
+                },
+                "backoffLimit": "4",
+            },
         },
     }
 
