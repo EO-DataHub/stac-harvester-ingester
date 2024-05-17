@@ -30,9 +30,9 @@ def create_custom_resource(catalogue, bucket_name):
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["pod_name"]},
         "spec": {
-            "source-url": catalogue['url'],
-            "catalogue-destination": catalogue['path'],
-            "workspace": os.environ['WORKSPACE_NAME'],
+            "source-url": catalogue["url"],
+            "catalogue-destination": catalogue["path"],
+            "workspace": os.environ["WORKSPACE_NAME"],
         },
     }
 
