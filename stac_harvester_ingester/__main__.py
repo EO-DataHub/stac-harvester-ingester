@@ -59,7 +59,7 @@ def main():
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
     consumer = pulsar_client.subscribe(
-        topic=f"harvested{identifier}", subscription_name=f"git_change_scanner{identifier}"
+        topic=f"transformed{identifier}", subscription_name=f"harvester-ingester{identifier}"
     )
 
     plural = "stac-harvesters"
