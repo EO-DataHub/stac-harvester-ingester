@@ -7,7 +7,10 @@ RUN apt-get update --yes --quiet
 RUN apt-get install --yes --quiet --no-install-recommends \
     openssh-client \
     procps \
-    curl
+    curl && \
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && \
+    chmod +x ./kubectl && \
+    mv ./kubectl /usr/local/bin/kubectl
 
 RUN python -m pip install --upgrade pip
 
