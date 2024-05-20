@@ -9,10 +9,6 @@ import boto3
 from kubernetes import client, config
 from pulsar import Client
 
-# Initiate Pulsar
-pulsar_url = os.environ.get("PULSAR_URL")
-pulsar_client = Client(pulsar_url)
-
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
@@ -33,6 +29,7 @@ def create_custom_resource(catalogue, bucket_name):
             "source-url": catalogue["url"],
             "catalogue-destination": catalogue["path"],
             "workspace": catalogue["workspace"],
+            "bucket-name": bucket_name,
         },
     }
 
