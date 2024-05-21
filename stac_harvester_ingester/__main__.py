@@ -9,12 +9,6 @@ import boto3
 from kubernetes import client, config
 from pulsar import Client
 
-# Initiate Pulsar
-pulsar_url = os.environ.get("PULSAR_URL")
-pulsar_client = Client(pulsar_url)
-consumer = pulsar_client.subscribe(topic="harvested", subscription_name="transformer-subscription")
-producer = pulsar_client.create_producer(topic="transformed", producer_name="transformer")
-
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
@@ -26,14 +20,16 @@ def get_name(url):
     return re.sub(r"[^0-9a-z.-]", r"", name)
 
 
-def create_custom_resource(catalogue, bucket_name):
+def create_custom_resource(catalogue):
     return {
         "apiVersion": "core.telespazio-uk.io/v1",
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["pod_name"]},
         "spec": {
-            "command": f"/bin/sh -c python3 -m stac_harvester {catalogue['url']} {os.environ['WORKSPACE_NAME']} {catalogue['path']} {bucket_name} {catalogue['limit']}",  # noqa: E501
-            "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
+            "source-url": catalogue["url"],
+            "catalogue-destination": catalogue["path"],
+            "workspace": catalogue["workspace"],
+            "bucket-name": catalogue["bucket_name"],
         },
     }
 
@@ -59,7 +55,7 @@ def main():
     pulsar_url = os.environ.get("PULSAR_URL")
     pulsar_client = Client(pulsar_url)
     consumer = pulsar_client.subscribe(
-        topic="transformed", subscription_name=f"transformer{identifier}"
+        topic=f"transformed{identifier}", subscription_name=f"harvester-ingester{identifier}"
     )
 
     plural = "stac-harvesters"
@@ -75,6 +71,7 @@ def main():
             data = msg.data().decode("utf-8")
             data_dict = json.loads(data)
             bucket_name = data_dict.get("bucket_name")
+            workspace = data_dict.get("workspace")
 
             for key in data_dict["added_keys"] + data_dict["updated_keys"]:
                 logging.info(f"Key: {key}")
@@ -85,9 +82,12 @@ def main():
                 api = client.CustomObjectsApi()
 
                 catalogue["pod_name"] = f"stac-harvester-{get_name(catalogue['url'])}"
+                catalogue["workspace"] = workspace
+                catalogue["bucket_name"] = bucket_name
+
                 logging.info(f"Creating resource: {catalogue['pod_name']}")
 
-                resource = create_custom_resource(catalogue, bucket_name)
+                resource = create_custom_resource(catalogue)
 
                 try:
                     api.create_namespaced_custom_object(
