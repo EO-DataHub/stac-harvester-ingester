@@ -6,7 +6,8 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update --yes --quiet
 RUN apt-get install --yes --quiet --no-install-recommends \
     openssh-client \
-    procps
+    procps \
+    git
 
 RUN python -m pip install --upgrade pip
 

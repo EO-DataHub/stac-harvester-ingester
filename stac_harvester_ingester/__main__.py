@@ -6,6 +6,7 @@ import traceback
 from urllib.parse import urlparse
 
 import boto3
+from eodhp_utils.pulsar.messages import get_message_data
 from kubernetes import client, config
 from pulsar import Client
 
@@ -68,8 +69,7 @@ def main():
         try:
             logging.info(f"Parsing harvested message {msg.data()}")
 
-            data = msg.data().decode("utf-8")
-            data_dict = json.loads(data)
+            data_dict = get_message_data(msg)
             bucket_name = data_dict.get("bucket_name")
             workspace = data_dict.get("workspace")
 
