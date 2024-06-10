@@ -198,7 +198,6 @@ def main():
         topic=f"transformed{identifier}", subscription_name=f"harvester-ingester{identifier}"
     )
 
-
     print("AAAAAAAAAAAAAAAA")
     print(f"transformed{identifier}")
 
