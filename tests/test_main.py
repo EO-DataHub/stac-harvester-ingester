@@ -1,4 +1,6 @@
 import json
+import os
+from unittest import mock
 
 import pytest
 from stac_harvester_ingester.__main__ import (
@@ -8,6 +10,12 @@ from stac_harvester_ingester.__main__ import (
     define_catalogue,
     get_name,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_environment_variables():
+    with mock.patch.dict(os.environ, {"STAC_HARVESTER_IMAGE_URL": "path-to.com/image-name"}):
+        yield
 
 
 @pytest.fixture
