@@ -199,7 +199,7 @@ def main():
     )
 
 
-    print('AAAAAAAAAAAAAAAA')
+    print("AAAAAAAAAAAAAAAA")
     print(f"transformed{identifier}")
 
     while True:
