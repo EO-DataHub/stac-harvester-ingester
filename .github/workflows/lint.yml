@@ -11,6 +11,6 @@ jobs:
         with:
           options: "--line-length 100 --check --verbose"
       - run: pip install isort
-      - run: isort . --check --diff --profile black
+      - run: isort --profile black . --check --diff
       - uses: chartboost/ruff-action@v1
 
