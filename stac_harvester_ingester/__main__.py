@@ -230,7 +230,7 @@ def main():
                     catalogue["workspace"] = workspace
                     catalogue["bucket_name"] = bucket_name
 
-                    logging.info(f"Creating resource: {catalogue['pod_name']}")
+                    logging.info(f"Creating resource: {catalogue['name']}")
 
                     stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
                     event_source_resource = create_event_source_spec(catalogue)
