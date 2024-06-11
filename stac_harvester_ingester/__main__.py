@@ -18,7 +18,7 @@ def get_name(url):
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
     name = name.replace("/", "-")
 
-    return re.sub(r"[^0-9a-z.-]", r"", name)
+    return re.sub(r"[^0-9a-z.-]", r"", name)[:200]
 
 
 def create_stac_harvester_custom_resource_spec(catalogue):
@@ -35,11 +35,24 @@ def create_stac_harvester_custom_resource_spec(catalogue):
     }
 
 
-def create_event_source_spec(catalogue):
+def create_event_source_spec(catalogue, uid):
     return {
         "apiVersion": "argoproj.io/v1alpha1",
         "kind": "EventSource",
-        "metadata": {"name": catalogue["event_source_name"], "namespace": "argo-events"},
+        "metadata": {
+            "name": catalogue["event_source_name"],
+            "namespace": "argo-events",
+            "ownerReferences": [
+                {
+                    "apiVersion": "core.telespazio-uk.io/v1",
+                    "blockOwnerDeletion": "false",
+                    "controller": "false",
+                    "kind": "STACHarvester",
+                    "name": catalogue["stac_harvester_name"],
+                    "uid": uid
+                }
+            ]
+        },
         "spec": {
             "serviceAccountName": "argo-events",
             "calendar": {"event-schedule": {"schedule": catalogue["schedule"]}},
@@ -47,11 +60,24 @@ def create_event_source_spec(catalogue):
     }
 
 
-def create_sensor_spec(catalogue):
+def create_sensor_spec(catalogue, uid):
     return {
         "apiVersion": "argoproj.io/v1alpha1",
         "kind": "Sensor",
-        "metadata": {"name": catalogue["sensor_name"], "namespace": "argo-events"},
+        "metadata": {
+            "name": catalogue["sensor_name"],
+            "namespace": "argo-events",
+            "ownerReferences": [
+                {
+                    "apiVersion": "core.telespazio-uk.io/v1",
+                    "blockOwnerDeletion": "false",
+                    "controller": "false",
+                    "kind": "STACHarvester",
+                    "name": catalogue["stac_harvester_name"],
+                    "uid": uid
+                }
+            ]
+        },
         "spec": {
             "template": {"serviceAccountName": "argo-events"},
             "dependencies": [
@@ -62,6 +88,12 @@ def create_sensor_spec(catalogue):
                 }
             ],
             "triggers": [
+                {
+                    "rateLimit": {
+                        "unit": "Hour",
+                        "requestsPerUnit": 10
+                    }
+                },
                 {
                     "template": {
                         "name": "create-job-trigger",
@@ -114,58 +146,126 @@ def create_sensor_spec(catalogue):
     }
 
 
-def create_stac_harvester_custom_resource(api, resource):
+def create_stac_harvester_custom_resource(api, resource, catalogue):
+    plural = "stac-harvesters"
+    namespace = "rc"
+    version = "v1"
+    group = "core.telespazio-uk.io"
+
     try:
         api.create_namespaced_custom_object(
-            group="core.telespazio-uk.io",
-            version="v1",
-            namespace="rc",
-            plural="stac-harvesters",
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural,
             body=resource,
         )
         logging.info("STACHarvester custom resource created")
     except client.exceptions.ApiException as e:
         if e.status == 409:  # Already exists. Recreate
-            pass
+
+            api.delete_namespaced_custom_object(
+                group=group,
+                version=version,
+                name=catalogue["stac_harvester_name"],
+                namespace=namespace,
+                plural=plural,
+                body=client.V1DeleteOptions(),
+            )
+
+            api.create_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                body=resource,
+            )
         else:
             raise
 
+    return api.get_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        name=catalogue["stac_harvester_name"],
+                        namespace=namespace,
+                        plural=plural,
+                    )
 
-def create_event_source(api, event_source_resource):
+
+def create_event_source(api, event_source_resource, catalogue):
+    plural = "eventsources"
+    namespace = "argo-events"
+    group = "argoproj.io"
+    version = "v1alpha1"
     try:
         api.create_namespaced_custom_object(
-            group="argoproj.io",
-            version="v1alpha1",
-            namespace="argo-events",
-            plural="eventsources",
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural,
             body=event_source_resource,
         )
     except client.exceptions.ApiException as e:
         if e.status == 409:
-            pass
+            api.delete_namespaced_custom_object(
+                group=group,
+                version=version,
+                name=catalogue["event_source_name"],
+                namespace=namespace,
+                plural=plural,
+                body=client.V1DeleteOptions(),
+            )
+
+            api.create_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                body=event_source_resource,
+            )
         else:
             raise
 
 
-def create_sensor(api, sensor_resource):
+def create_sensor(api, sensor_resource, catalogue):
+    namespace = "argo-events"
+    plural = "sensors"
+    group = "argoproj.io"
+    version = "v1alpha1"
+
     try:
         api.create_namespaced_custom_object(
-            group="argoproj.io",
-            version="v1alpha1",
-            namespace="argo-events",
-            plural="sensors",
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural,
             body=sensor_resource,
         )
     except client.exceptions.ApiException as e:
         if e.status == 409:
-            pass
+            api.delete_namespaced_custom_object(
+                group=group,
+                version=version,
+                name=catalogue["sensor_name"],
+                namespace=namespace,
+                plural=plural,
+                body=client.V1DeleteOptions(),
+            )
+
+            api.create_namespaced_custom_object(
+                group=group,
+                version=version,
+                namespace=namespace,
+                plural=plural,
+                body=sensor_resource,
+            )
         else:
             raise
 
 
-def define_catalogue(contents):
+def define_catalogue(contents, workspace):
     catalogue = json.loads(contents)
-    catalogue["name"] = f"{get_name(catalogue['url'])}"
+    catalogue["name"] = f"{workspace}-{get_name(catalogue['url'])}"
     catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
     catalogue["stac_harvester_name"] = f'stac-harvester-{catalogue["name"]}'
     catalogue["job_name"] = f"job-{catalogue['name'].replace('.', '')}"
@@ -207,38 +307,29 @@ def main():
             bucket_name = data_dict.get("bucket_name")
             workspace = data_dict.get("workspace")
 
-            job_exists = False
-
             for key in data_dict["added_keys"] + data_dict["updated_keys"]:
                 logging.info(f"Key: {key}")
                 data = s3.get_object(Bucket=bucket_name, Key=key)
                 contents = data["Body"].read().decode("utf-8")
-                catalogue = define_catalogue(contents)
+                catalogue = define_catalogue(contents, workspace)
 
-                with client.ApiClient() as api_client:
-                    api_instance = client.CoreV1Api(api_client)
-                    namespace = "rc"
-                    all_pods = api_instance.list_namespaced_pod(namespace)
-                    all_pod_names = [item.metadata.name for item in all_pods.items]
-                    for pod_name in all_pod_names:
-                        if pod_name.startswith(catalogue["job_name"]):
-                            job_exists = True
+                api = client.CustomObjectsApi()
 
-                if not job_exists:
-                    api = client.CustomObjectsApi()
+                catalogue["workspace"] = workspace
+                catalogue["bucket_name"] = bucket_name
 
-                    catalogue["workspace"] = workspace
-                    catalogue["bucket_name"] = bucket_name
+                logging.info(f"Creating resource: {catalogue['name']}")
 
-                    logging.info(f"Creating resource: {catalogue['name']}")
+                stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
+                stac_harvester = create_stac_harvester_custom_resource(api, stac_harvester_resource)
 
-                    stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
-                    event_source_resource = create_event_source_spec(catalogue)
-                    sensor_resource = create_sensor_spec(catalogue)
+                parent_uid = stac_harvester['metadata']['uid']
 
-                    create_stac_harvester_custom_resource(api, stac_harvester_resource)
-                    create_event_source(api, event_source_resource)
-                    create_sensor(api, sensor_resource)
+                event_source_resource = create_event_source_spec(catalogue, parent_uid)
+                sensor_resource = create_sensor_spec(catalogue, parent_uid)
+
+                create_event_source(api, event_source_resource, catalogue)
+                create_sensor(api, sensor_resource, catalogue)
 
         except Exception as e:
             logging.info("Error occurred during harvest")
