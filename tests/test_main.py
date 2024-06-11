@@ -21,7 +21,7 @@ def mock_environment_variables():
 @pytest.fixture
 def mock_catalogue():
     contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
-    return define_catalogue(json.dumps(contents))
+    return define_catalogue(json.dumps(contents), "my_workspace")
 
 
 def test_get_name(mock_catalogue):
@@ -43,14 +43,16 @@ def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
 
 
 def test_create_event_source_spec(mock_catalogue):
-    resource = create_event_source_spec(mock_catalogue)
+    mock_uid = "123"
+    resource = create_event_source_spec(mock_catalogue, mock_uid)
 
     assert len(resource.keys()) == 4
     assert len(resource["spec"].keys()) == 2
 
 
 def test_create_sensor_spec(mock_catalogue):
-    resource = create_sensor_spec(mock_catalogue)
+    mock_uid = "123"
+    resource = create_sensor_spec(mock_catalogue, mock_uid)
 
     assert len(resource.keys()) == 4
     assert len(resource["spec"].keys()) == 3
@@ -58,6 +60,6 @@ def test_create_sensor_spec(mock_catalogue):
 
 def test_define_catalogue():
     contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
-    catalogue = define_catalogue(json.dumps(contents))
+    catalogue = define_catalogue(json.dumps(contents), "my_workspace")
 
     assert len(catalogue.keys()) == 8
