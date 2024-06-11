@@ -45,8 +45,8 @@ def create_event_source_spec(catalogue, uid):
             "ownerReferences": [
                 {
                     "apiVersion": "core.telespazio-uk.io/v1",
-                    "blockOwnerDeletion": "false",
-                    "controller": "false",
+                    "blockOwnerDeletion": False,
+                    "controller": False,
                     "kind": "STACHarvester",
                     "name": catalogue["stac_harvester_name"],
                     "uid": uid,
@@ -70,8 +70,8 @@ def create_sensor_spec(catalogue, uid):
             "ownerReferences": [
                 {
                     "apiVersion": "core.telespazio-uk.io/v1",
-                    "blockOwnerDeletion": "false",
-                    "controller": "false",
+                    "blockOwnerDeletion": False,
+                    "controller": False,
                     "kind": "STACHarvester",
                     "name": catalogue["stac_harvester_name"],
                     "uid": uid,
