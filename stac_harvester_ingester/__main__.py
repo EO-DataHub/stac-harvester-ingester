@@ -49,9 +49,9 @@ def create_event_source_spec(catalogue, uid):
                     "controller": "false",
                     "kind": "STACHarvester",
                     "name": catalogue["stac_harvester_name"],
-                    "uid": uid
+                    "uid": uid,
                 }
-            ]
+            ],
         },
         "spec": {
             "serviceAccountName": "argo-events",
@@ -74,9 +74,9 @@ def create_sensor_spec(catalogue, uid):
                     "controller": "false",
                     "kind": "STACHarvester",
                     "name": catalogue["stac_harvester_name"],
-                    "uid": uid
+                    "uid": uid,
                 }
-            ]
+            ],
         },
         "spec": {
             "template": {"serviceAccountName": "argo-events"},
@@ -88,12 +88,7 @@ def create_sensor_spec(catalogue, uid):
                 }
             ],
             "triggers": [
-                {
-                    "rateLimit": {
-                        "unit": "Hour",
-                        "requestsPerUnit": 10
-                    }
-                },
+                {"rateLimit": {"unit": "Hour", "requestsPerUnit": 10}},
                 {
                     "template": {
                         "name": "create-job-trigger",
@@ -140,7 +135,7 @@ def create_sensor_spec(catalogue, uid):
                             },
                         },
                     }
-                }
+                },
             ],
         },
     }
@@ -163,7 +158,6 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
         logging.info("STACHarvester custom resource created")
     except client.exceptions.ApiException as e:
         if e.status == 409:  # Already exists. Recreate
-
             api.delete_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -184,12 +178,12 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
             raise
 
     return api.get_namespaced_custom_object(
-                        group=group,
-                        version=version,
-                        name=catalogue["stac_harvester_name"],
-                        namespace=namespace,
-                        plural=plural,
-                    )
+        group=group,
+        version=version,
+        name=catalogue["stac_harvester_name"],
+        namespace=namespace,
+        plural=plural,
+    )
 
 
 def create_event_source(api, event_source_resource, catalogue):
@@ -323,7 +317,7 @@ def main():
                 stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
                 stac_harvester = create_stac_harvester_custom_resource(api, stac_harvester_resource)
 
-                parent_uid = stac_harvester['metadata']['uid']
+                parent_uid = stac_harvester["metadata"]["uid"]
 
                 event_source_resource = create_event_source_spec(catalogue, parent_uid)
                 sensor_resource = create_sensor_spec(catalogue, parent_uid)
