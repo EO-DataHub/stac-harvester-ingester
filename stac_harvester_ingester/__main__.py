@@ -134,7 +134,7 @@ def create_sensor_spec(catalogue, uid):
                                 }
                             },
                         },
-                    }
+                    },
                 },
             ],
         },
