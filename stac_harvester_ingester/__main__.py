@@ -260,10 +260,10 @@ def create_sensor(api, sensor_resource, catalogue):
 def define_catalogue(contents, workspace):
     catalogue = json.loads(contents)
     catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
-    catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
+    catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'[:62]
     catalogue["stac_harvester_name"] = f'stac-harvester-{catalogue["name"]}'
     catalogue["job_name"] = f"job-{catalogue['name'].replace('.', '')}"
-    catalogue["event_source_name"] = f'event-source-{catalogue["name"].replace(".", "")}'
+    catalogue["event_source_name"] = f'event-source-{catalogue["name"].replace(".", "")}'[:62]
 
     return catalogue
 
