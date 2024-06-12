@@ -25,9 +25,10 @@ def mock_catalogue():
 
 
 def test_get_name(mock_catalogue):
+    workspace = "ws"
     url = "https://www.test-domain.com/path/1"
-    expected_name = "www.test-domain.com-path-1"
-    actual_name = get_name(url)
+    expected_name = "ws-www.test-domain.com-path-1"
+    actual_name = get_name(workspace, url)
 
     assert actual_name == expected_name
 
