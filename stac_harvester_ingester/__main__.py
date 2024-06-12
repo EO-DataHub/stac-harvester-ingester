@@ -315,7 +315,7 @@ def main():
                 logging.info(f"Creating resource: {catalogue['name']}")
 
                 stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
-                stac_harvester = create_stac_harvester_custom_resource(api, stac_harvester_resource)
+                stac_harvester = create_stac_harvester_custom_resource(api, stac_harvester_resource, catalogue)
 
                 parent_uid = stac_harvester["metadata"]["uid"]
 
