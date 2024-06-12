@@ -88,8 +88,8 @@ def create_sensor_spec(catalogue, uid):
                 }
             ],
             "triggers": [
-                {"rateLimit": {"unit": "Hour", "requestsPerUnit": 10}},
                 {
+                    "rateLimit": {"unit": "Hour", "requestsPerUnit": 10},
                     "template": {
                         "name": "create-job-trigger",
                         "k8s": {
