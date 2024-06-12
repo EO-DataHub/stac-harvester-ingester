@@ -158,6 +158,7 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
         logging.info("STACHarvester custom resource created")
     except client.exceptions.ApiException as e:
         if e.status == 409:  # Already exists. Recreate
+            logging.info("STACHarvester custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -174,6 +175,7 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
                 plural=plural,
                 body=resource,
             )
+            logging.info("STACHarvester custom resource created")
         else:
             raise
 
@@ -199,8 +201,10 @@ def create_event_source(api, event_source_resource, catalogue):
             plural=plural,
             body=event_source_resource,
         )
+        logging.info("Eventsource custom resource created")
     except client.exceptions.ApiException as e:
         if e.status == 409:
+            logging.info("Eventsource custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -217,6 +221,7 @@ def create_event_source(api, event_source_resource, catalogue):
                 plural=plural,
                 body=event_source_resource,
             )
+            logging.info("Eventsource custom resource created")
         else:
             raise
 
@@ -235,8 +240,10 @@ def create_sensor(api, sensor_resource, catalogue):
             plural=plural,
             body=sensor_resource,
         )
+        logging.info("Sensor custom resource created")
     except client.exceptions.ApiException as e:
         if e.status == 409:
+            logging.info("Sensor custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -253,6 +260,7 @@ def create_sensor(api, sensor_resource, catalogue):
                 plural=plural,
                 body=sensor_resource,
             )
+            logging.info("Sensor custom resource created")
         else:
             raise
 
