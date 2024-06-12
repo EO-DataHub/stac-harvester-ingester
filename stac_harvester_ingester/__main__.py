@@ -13,12 +13,12 @@ from pulsar import Client
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
-def get_name(url):
+def get_name(workspace, url):
     parsed = urlparse(url)
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
-    name = name.replace("/", "-")
+    name = f'{workspace}-{name.replace("/", "-")}'
 
-    return re.sub(r"[^0-9a-z.-]", r"", name)[:200]
+    return re.sub(r"[^0-9a-z.-]", r"", name)[:150]
 
 
 def create_stac_harvester_custom_resource_spec(catalogue):
@@ -259,7 +259,7 @@ def create_sensor(api, sensor_resource, catalogue):
 
 def define_catalogue(contents, workspace):
     catalogue = json.loads(contents)
-    catalogue["name"] = f"{workspace}-{get_name(catalogue['url'])}"
+    catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
     catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
     catalogue["stac_harvester_name"] = f'stac-harvester-{catalogue["name"]}'
     catalogue["job_name"] = f"job-{catalogue['name'].replace('.', '')}"
