@@ -3,11 +3,14 @@ import logging
 import os
 import re
 import traceback
+from contextlib import contextmanager
 from urllib.parse import urlparse
 
 import boto3
+import kubernetes
 from eodhp_utils.pulsar.messages import get_message_data
 from kubernetes import client, config
+from kubernetes.dynamic.exceptions import NotFoundError
 from pulsar import Client
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
@@ -146,43 +149,49 @@ def create_sensor_spec(catalogue, uid):
     }
 
 
+@contextmanager
+def aipipe_resource_dclient(kind, api_version="ai-pipeline.org/v1alpha1"):
+    """This returns a context-managed k8s Dynamic Client for the specified CRD"""
+    with kubernetes.client.ApiClient() as k8s_client:
+        dclient = kubernetes.dynamic.DynamicClient(k8s_client)
+        api = dclient.resources.get(api_version=api_version, kind=kind)
+        yield api
+
+
+def update_model(resource, version):
+    with aipipe_resource_dclient("STACHarvester", api_version=version) as modelapi:
+        try:
+            existing_resource = modelapi.get(
+                name=resource["metadata"]["name"],
+                namespace=resource["metadata"]["namespace"],
+            )
+
+            updated_resource = existing_resource.to_dict()
+
+            if updated_resource["spec"] != resource["spec"]:
+                updated_resource["spec"] = resource["spec"]
+
+                logging.info("Updating Model spec to %s", updated_resource)
+
+                modelapi.replace(updated_resource)
+            else:
+                logging.debug("No need to update model %s", resource["metadata"]["name"])
+        except NotFoundError:
+            logging.info("Creating Model with manifest %s", resource)
+            modelapi.create(resource)
+
+
+
 def create_stac_harvester_custom_resource(api, resource, catalogue):
     plural = "stac-harvesters"
     namespace = "rc"
     group = "core.telespazio-uk.io"
     version = "v1"
 
-    try:
-        api.create_namespaced_custom_object(
-            group=group,
-            version=version,
-            namespace=namespace,
-            plural=plural,
-            body=resource,
-        )
-        logging.info("STACHarvester custom resource created")
-    except client.exceptions.ApiException as e:
-        if e.status == 409:  # Already exists. Recreate
-            logging.info("STACHarvester custom resource exists. Recreating")
-            api.delete_namespaced_custom_object(
-                group=group,
-                version=version,
-                name=catalogue["stac_harvester_name"],
-                namespace=namespace,
-                plural=plural,
-                body=client.V1DeleteOptions(),
-            )
-
-            api.create_namespaced_custom_object(
-                group=group,
-                version=version,
-                namespace=namespace,
-                plural=plural,
-                body=resource,
-            )
-            logging.info("STACHarvester custom resource created")
-        else:
-            raise
+    resource["metadata"]["namespace"] = namespace
+    logging.info('Checking STACHarvester resource')
+    update_model(resource, version)
+    logging.info('Resource check complete')
 
     return api.get_namespaced_custom_object(
         group=group,
