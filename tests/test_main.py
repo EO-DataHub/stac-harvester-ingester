@@ -24,13 +24,20 @@ def mock_catalogue():
     return define_catalogue(json.dumps(contents), "my_workspace")
 
 
-def test_get_name(mock_catalogue):
+@pytest.mark.parametrize(
+    "url, expected_name",
+    [
+        ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
+        ("https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path", "ws-www-test-domain-com-this-is-a-very-very-very-very-very-very"),
+        ("https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS", "ws-www-test-domain-com-this-path-has-dots-and-capitals"),
+    ],
+)
+def test_get_name(url, expected_name, mock_catalogue):
     workspace = "ws"
-    url = "https://www.test-domain.com/path/1"
-    expected_name = "ws-www.test-domain.com-path-1"
     actual_name = get_name(workspace, url)
 
     assert actual_name == expected_name
+    assert len(actual_name) <= 63
 
 
 def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
@@ -48,7 +55,7 @@ def test_create_event_source_spec(mock_catalogue):
     resource = create_event_source_spec(mock_catalogue, mock_uid)
 
     assert len(resource.keys()) == 4
-    assert len(resource["spec"].keys()) == 2
+    assert len(resource["spec"].keys()) == 3
 
 
 def test_create_sensor_spec(mock_catalogue):
@@ -56,7 +63,7 @@ def test_create_sensor_spec(mock_catalogue):
     resource = create_sensor_spec(mock_catalogue, mock_uid)
 
     assert len(resource.keys()) == 4
-    assert len(resource["spec"].keys()) == 3
+    assert len(resource["spec"].keys()) == 4
 
 
 def test_define_catalogue():
