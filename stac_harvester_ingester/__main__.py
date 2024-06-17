@@ -18,7 +18,7 @@ def get_name(workspace, url):
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
     name = f'{workspace}-{name.replace("/", "-")}'
 
-    return re.sub(r"[^0-9a-z.-]", r"", name)[:150]
+    return re.sub(r"[^0-9a-z-]", r"", name)[:40]
 
 
 def create_stac_harvester_custom_resource_spec(catalogue):
@@ -41,7 +41,7 @@ def create_event_source_spec(catalogue, uid):
         "kind": "EventSource",
         "metadata": {
             "name": catalogue["event_source_name"],
-            "namespace": "argo-events",
+            "namespace": "rc",
             "ownerReferences": [
                 {
                     "apiVersion": "core.telespazio-uk.io/v1",
@@ -54,7 +54,8 @@ def create_event_source_spec(catalogue, uid):
             ],
         },
         "spec": {
-            "serviceAccountName": "argo-events",
+            "eventBusName": "default",
+            "serviceAccountName": "resource-catalogue",
             "calendar": {"event-schedule": {"schedule": catalogue["schedule"]}},
         },
     }
@@ -66,7 +67,7 @@ def create_sensor_spec(catalogue, uid):
         "kind": "Sensor",
         "metadata": {
             "name": catalogue["sensor_name"],
-            "namespace": "argo-events",
+            "namespace": "rc",
             "ownerReferences": [
                 {
                     "apiVersion": "core.telespazio-uk.io/v1",
@@ -79,7 +80,8 @@ def create_sensor_spec(catalogue, uid):
             ],
         },
         "spec": {
-            "template": {"serviceAccountName": "argo-events"},
+            "eventBusName": "default",
+            "template": {"serviceAccountName": "resource-catalogue"},
             "dependencies": [
                 {
                     "name": "dependency",
@@ -101,7 +103,10 @@ def create_sensor_spec(catalogue, uid):
                                 "resource": {
                                     "apiVersion": "batch/v1",
                                     "kind": "Job",
-                                    "metadata": {"name": catalogue["job_name"], "namespace": "rc"},
+                                    "metadata": {
+                                        "generateName": catalogue["job_name"],
+                                        "namespace": "rc",
+                                    },
                                     "spec": {
                                         "template": {
                                             "spec": {
@@ -144,8 +149,8 @@ def create_sensor_spec(catalogue, uid):
 def create_stac_harvester_custom_resource(api, resource, catalogue):
     plural = "stac-harvesters"
     namespace = "rc"
-    version = "v1"
     group = "core.telespazio-uk.io"
+    version = "v1"
 
     try:
         api.create_namespaced_custom_object(
@@ -190,7 +195,7 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
 
 def create_event_source(api, event_source_resource, catalogue):
     plural = "eventsources"
-    namespace = "argo-events"
+    namespace = "rc"
     group = "argoproj.io"
     version = "v1alpha1"
     try:
@@ -203,7 +208,7 @@ def create_event_source(api, event_source_resource, catalogue):
         )
         logging.info("Eventsource custom resource created")
     except client.exceptions.ApiException as e:
-        if e.status == 409:
+        if e.status == 409:  # Already exists. Recreate
             logging.info("Eventsource custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
                 group=group,
@@ -226,8 +231,8 @@ def create_event_source(api, event_source_resource, catalogue):
             raise
 
 
-def create_sensor(api, sensor_resource, catalogue):
-    namespace = "argo-events"
+def create_sensor(api, resource, catalogue):
+    namespace = "rc"
     plural = "sensors"
     group = "argoproj.io"
     version = "v1alpha1"
@@ -238,7 +243,7 @@ def create_sensor(api, sensor_resource, catalogue):
             version=version,
             namespace=namespace,
             plural=plural,
-            body=sensor_resource,
+            body=resource,
         )
         logging.info("Sensor custom resource created")
     except client.exceptions.ApiException as e:
@@ -258,7 +263,7 @@ def create_sensor(api, sensor_resource, catalogue):
                 version=version,
                 namespace=namespace,
                 plural=plural,
-                body=sensor_resource,
+                body=resource,
             )
             logging.info("Sensor custom resource created")
         else:
@@ -270,8 +275,8 @@ def define_catalogue(contents, workspace):
     catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
     catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'[:62]
     catalogue["stac_harvester_name"] = f'stac-harvester-{catalogue["name"]}'
-    catalogue["job_name"] = f"job-{catalogue['name'].replace('.', '')}"
-    catalogue["event_source_name"] = f'event-source-{catalogue["name"].replace(".", "")}'[:62]
+    catalogue["job_name"] = f"job-{catalogue['name']}"
+    catalogue["event_source_name"] = f'event-source-{catalogue["name"]}'[:62]
 
     return catalogue
 
