@@ -4,6 +4,7 @@ import os
 import re
 import traceback
 from contextlib import contextmanager
+from datetime import datetime
 from urllib.parse import urlparse
 
 import boto3
@@ -20,9 +21,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 def get_name(workspace, url):
     parsed = urlparse(url)
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
-    name = f'{workspace}-{name}'
+    name = f"{workspace}-{name}"
 
-    name = slugify(name, max_length=63)
+    name = slugify(name, max_length=50)
+    name = f'{name}-{datetime.now().strftime("%H%M%S%d%m%y")}'
 
     return re.sub(r"[^0-9a-z-]", r"", name)
 
@@ -184,7 +186,6 @@ def update_model(resource, version):
             modelapi.create(resource)
 
 
-
 def create_stac_harvester_custom_resource(api, resource, catalogue):
     plural = "stac-harvesters"
     namespace = "rc"
@@ -192,9 +193,9 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
     version = "v1"
 
     resource["metadata"]["namespace"] = namespace
-    logging.info('Checking STACHarvester resource')
+    logging.info("Checking STACHarvester resource")
     update_model(resource, version)
-    logging.info('Resource check complete')
+    logging.info("Resource check complete")
 
     return api.get_namespaced_custom_object(
         group=group,
@@ -291,7 +292,7 @@ def define_catalogue(contents, workspace):
     catalogue["event_source_name"] = f'event-source-{catalogue["name"]}'
 
     for key in catalogue:
-        if 'name' in key:
+        if "name" in key:
             catalogue[key] = catalogue[key][:63]
 
     return catalogue

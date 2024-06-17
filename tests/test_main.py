@@ -28,15 +28,22 @@ def mock_catalogue():
     "url, expected_name",
     [
         ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
-        ("https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path", "ws-www-test-domain-com-this-is-a-very-very-very-very-very-very"),
-        ("https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS", "ws-www-test-domain-com-this-path-has-dots-and-capitals"),
+        (
+            "https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path",
+            "ws-www-test-domain-com-this-is-a-very-very-very-ve",
+        ),
+        (
+            "https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS",
+            "ws-www-test-domain-com-this-path-has-dots-and-capi",
+        ),
     ],
 )
 def test_get_name(url, expected_name, mock_catalogue):
     workspace = "ws"
     actual_name = get_name(workspace, url)
 
-    assert actual_name == expected_name
+    assert actual_name[:-13] == expected_name
+    assert actual_name[-12:].isnumeric()
     assert len(actual_name) <= 63
 
 
