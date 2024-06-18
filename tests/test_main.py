@@ -30,11 +30,11 @@ def mock_catalogue():
         ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
         (
             "https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path",
-            "ws-www-test-domain-com-this-is-a-very-very-very-ve",
+            "ws-www-test-domain-com-this-is-a-very-very",
         ),
         (
             "https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS",
-            "ws-www-test-domain-com-this-path-has-dots-and-capi",
+            "ws-www-test-domain-com-this-path-has-dots-a",
         ),
     ],
 )
