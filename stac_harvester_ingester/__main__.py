@@ -23,7 +23,7 @@ def get_name(workspace, url):
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
     name = f"{workspace}-{name}"
 
-    name = slugify(name, max_length=50)
+    name = slugify(name, max_length=43)  # 64 character limit minus length of datatime and "sensor-"
     name = f'{name}-{datetime.now().strftime("%H%M%S%d%m%y")}'
 
     return re.sub(r"[^0-9a-z-]", r"", name)
@@ -287,9 +287,9 @@ def define_catalogue(contents, workspace):
     catalogue = json.loads(contents)
     catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
     catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
-    catalogue["stac_harvester_name"] = f'stac-harvester-{catalogue["name"]}'
+    catalogue["stac_harvester_name"] = f'sh-{catalogue["name"]}'
     catalogue["job_name"] = f"job-{catalogue['name']}"
-    catalogue["event_source_name"] = f'event-source-{catalogue["name"]}'
+    catalogue["event_source_name"] = f'es-{catalogue["name"]}'
 
     for key in catalogue:
         if "name" in key:
