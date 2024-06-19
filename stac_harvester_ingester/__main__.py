@@ -4,7 +4,6 @@ import os
 import re
 import traceback
 from contextlib import contextmanager
-from datetime import datetime
 from urllib.parse import urlparse
 
 import boto3
