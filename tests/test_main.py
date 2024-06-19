@@ -21,15 +21,32 @@ def mock_environment_variables():
 @pytest.fixture
 def mock_catalogue():
     contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
-    return define_catalogue(json.dumps(contents))
+    return define_catalogue(json.dumps(contents), "my_workspace")
 
 
-def test_get_name(mock_catalogue):
-    url = "https://www.test-domain.com/path/1"
-    expected_name = "www.test-domain.com-path-1"
-    actual_name = get_name(url)
+@pytest.mark.parametrize(
+    "url, expected_name",
+    [
+        ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
+        (
+            "https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path",
+            "ws-www-test-domain-com-this-is-a-very-very-very-very-ver",
+        ),
+        (
+            "https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS",
+            "ws-www-test-domain-com-this-path-has-dots-and-capitals",
+        ),
+    ],
+)
+def test_get_name(url, expected_name, mock_catalogue):
+    workspace = "ws"
+    actual_name = get_name(workspace, url)
 
-    assert actual_name == expected_name
+    if len(actual_name) <= 63:
+        assert actual_name == expected_name
+    else:
+        assert actual_name[:-8] == expected_name
+    assert len(actual_name) <= 63
 
 
 def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
@@ -43,21 +60,23 @@ def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
 
 
 def test_create_event_source_spec(mock_catalogue):
-    resource = create_event_source_spec(mock_catalogue)
-
-    assert len(resource.keys()) == 4
-    assert len(resource["spec"].keys()) == 2
-
-
-def test_create_sensor_spec(mock_catalogue):
-    resource = create_sensor_spec(mock_catalogue)
+    mock_uid = "123"
+    resource = create_event_source_spec(mock_catalogue, mock_uid)
 
     assert len(resource.keys()) == 4
     assert len(resource["spec"].keys()) == 3
 
 
+def test_create_sensor_spec(mock_catalogue):
+    mock_uid = "123"
+    resource = create_sensor_spec(mock_catalogue, mock_uid)
+
+    assert len(resource.keys()) == 4
+    assert len(resource["spec"].keys()) == 4
+
+
 def test_define_catalogue():
     contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
-    catalogue = define_catalogue(json.dumps(contents))
+    catalogue = define_catalogue(json.dumps(contents), "my_workspace")
 
     assert len(catalogue.keys()) == 8
