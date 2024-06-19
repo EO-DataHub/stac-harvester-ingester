@@ -23,8 +23,7 @@ def get_name(workspace, url):
     name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
     name = f"{workspace}-{name}"
 
-    name = slugify(name, max_length=43)  # 64 character limit minus length of datatime and "sensor-"
-    name = f'{name}-{datetime.now().strftime("%H%M%S%d%m%y")}'
+    name = slugify(name, max_length=56)  # 64-character limit minus length of "sensor-"
 
     return re.sub(r"[^0-9a-z-]", r"", name)
 

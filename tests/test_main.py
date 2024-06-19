@@ -30,11 +30,11 @@ def mock_catalogue():
         ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
         (
             "https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path",
-            "ws-www-test-domain-com-this-is-a-very-very",
+            "ws-www-test-domain-com-this-is-a-very-very-very-very-ver",
         ),
         (
             "https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS",
-            "ws-www-test-domain-com-this-path-has-dots-a",
+            "ws-www-test-domain-com-this-path-has-dots-and-capitals",
         ),
     ],
 )
@@ -42,8 +42,10 @@ def test_get_name(url, expected_name, mock_catalogue):
     workspace = "ws"
     actual_name = get_name(workspace, url)
 
-    assert actual_name[:-13] == expected_name
-    assert actual_name[-12:].isnumeric()
+    if len(actual_name) <= 63:
+        assert actual_name == expected_name
+    else:
+        assert actual_name[:-8] == expected_name
     assert len(actual_name) <= 63
 
 
