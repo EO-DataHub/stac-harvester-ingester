@@ -1,5 +1,9 @@
 # stac-harvester-ingester
 
+## v0.1.4 (2024-07-09)
+- Add top-level catalog to spec for stac-harvester
+  - Used to determine if data will be ingested into user workspace
+
 ## v0.1.3 (2024-05-28)
 - Add schedule
 
