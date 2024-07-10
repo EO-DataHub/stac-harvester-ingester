@@ -34,8 +34,7 @@ def create_stac_harvester_custom_resource_spec(catalogue):
         "metadata": {"name": catalogue["stac_harvester_name"]},
         "spec": {
             "source-url": catalogue["url"],
-            "catalogue-destination": catalogue["catalog"],
-            "sub-catalogue-destination": catalogue["path"],
+            "catalogue-destination": catalogue["path"],
             "workspace": catalogue["workspace"],
             "bucket-name": catalogue["bucket_name"],
         },
@@ -129,7 +128,7 @@ def create_sensor_spec(catalogue, uid):
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nsub_catalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'sub-catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $source_url $workspace $catalogue_destination $sub_catalogue_destination $bucket_name\n',  # noqa: E501
+                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
                                                         ],
                                                         "env": [
                                                             {

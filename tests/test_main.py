@@ -3,7 +3,6 @@ import os
 from unittest import mock
 
 import pytest
-
 from stac_harvester_ingester.__main__ import (
     create_event_source_spec,
     create_sensor_spec,
@@ -21,12 +20,7 @@ def mock_environment_variables():
 
 @pytest.fixture
 def mock_catalogue():
-    contents = {
-        "url": "https://www.my-url.com/path",
-        "catalog": "catalog",
-        "path": "path",
-        "schedule": "*/10 * * * *",
-    }
+    contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
     return define_catalogue(json.dumps(contents), "my_workspace")
 
 
@@ -62,7 +56,7 @@ def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
     resource = create_stac_harvester_custom_resource_spec(mock_catalogue)
 
     assert len(resource.keys()) == 4
-    assert len(resource["spec"].keys()) == 5
+    assert len(resource["spec"].keys()) == 4
 
 
 def test_create_event_source_spec(mock_catalogue):
