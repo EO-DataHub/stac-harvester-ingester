@@ -68,6 +68,7 @@ dependencies = [
     "boto3~=1.34.82",
     "kubernetes",
     "eodhp-utils @ git+https://github.com/UKEODHP/eodhp-utils@v0.1.0",
+    "python-slugify",
 ]
 
 # List additional groups of dependencies here (e.g. development

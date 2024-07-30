@@ -1,5 +1,8 @@
 # stac-harvester-ingester
 
+## v0.1.3 (2024-05-28)
+- Add schedule
+
 ## v0.1.2 (2024-05-21)
 - Use functionality from eodhp-utils
 
