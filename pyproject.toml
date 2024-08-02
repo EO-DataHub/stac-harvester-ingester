@@ -64,8 +64,8 @@ classifiers = [
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
-    "pulsar-client~=3.4.0",
-    "boto3~=1.34.82",
+    "pulsar-client",
+    "boto3",
     "kubernetes",
     "eodhp-utils @ git+https://github.com/EO-DataHub/eodhp-utils@v0.1.0",
     "python-slugify",
