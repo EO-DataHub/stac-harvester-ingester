@@ -64,10 +64,10 @@ classifiers = [
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
-    "pulsar-client~=3.4.0",
-    "boto3~=1.34.82",
+    "pulsar-client",
+    "boto3",
     "kubernetes",
-    "eodhp-utils @ git+https://github.com/UKEODHP/eodhp-utils@v0.1.0",
+    "eodhp-utils @ git+https://github.com/EO-DataHub/eodhp-utils@v0.1.0",
     "python-slugify",
 ]
 
@@ -80,7 +80,7 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["pip-tools", "pytest", "pytest-xdist", "pytest-mock", "pytest-watcher", "black", "ruff"]
+dev = ["pip-tools", "pytest", "pytest-xdist", "pytest-mock", "pytest-watcher", "black", "ruff", "isort", "pre-commit"]
 
 # List URLs that are relevant to your project
 #

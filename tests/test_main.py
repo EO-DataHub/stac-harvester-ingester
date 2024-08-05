@@ -3,6 +3,7 @@ import os
 from unittest import mock
 
 import pytest
+
 from stac_harvester_ingester.__main__ import (
     create_event_source_spec,
     create_sensor_spec,
