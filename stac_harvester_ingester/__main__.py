@@ -243,7 +243,6 @@ def create_event_source(api, event_source_resource, catalogue):
                     name=catalogue["event_source_name"],
                     namespace=namespace,
                     plural=plural,
-                    body=client.V1DeleteOptions(),
                 )
 
                 if es:
