@@ -291,6 +291,24 @@ def create_sensor(api, resource, catalogue):
                 body=client.V1DeleteOptions(),
             )
 
+            count = 0
+            while count < MAX_RETRIES:
+                count += 1
+                sensor = api.get_namespaced_custom_object(
+                    group=group,
+                    version=version,
+                    name=catalogue["sensor_name"],
+                    namespace=namespace,
+                    plural=plural,
+                )
+
+                if sensor:
+                    logging.info(f"Sensor still deleting. Retry {count}")
+                    time.sleep(5)
+                else:
+                    logging.info("Sensor deleted")
+                    break
+
             api.create_namespaced_custom_object(
                 group=group,
                 version=version,
