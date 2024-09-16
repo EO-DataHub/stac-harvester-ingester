@@ -247,9 +247,10 @@ def create_event_source(api, event_source_resource, catalogue):
                     )
                     logging.info(f"Eventsource still deleting. Retry {count}")
                     time.sleep(5)
-                except client.exceptions.ApiException:
-                    logging.info("Eventsource deleted")
-                    break
+                except client.exceptions.ApiException as e:
+                    if e.status == 404:
+                        logging.info("Eventsource deleted")
+                        break
 
             api.create_namespaced_custom_object(
                 group=group,
@@ -304,8 +305,9 @@ def create_sensor(api, resource, catalogue):
                     logging.info(f"Sensor still deleting. Retry {count}")
                     time.sleep(5)
                 except client.exceptions.ApiException as e:
-                    logging.info("Sensor deleted")
-                    break
+                    if e.status == 404:
+                        logging.info("Sensor deleted")
+                        break
 
             api.create_namespaced_custom_object(
                 group=group,
