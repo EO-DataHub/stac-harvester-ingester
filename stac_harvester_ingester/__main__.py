@@ -237,18 +237,17 @@ def create_event_source(api, event_source_resource, catalogue):
             count = 0
             while count < MAX_RETRIES:
                 count += 1
-                es = api.get_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    name=catalogue["event_source_name"],
-                    namespace=namespace,
-                    plural=plural,
-                )
-
-                if es:
+                try:
+                    api.get_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        name=catalogue["event_source_name"],
+                        namespace=namespace,
+                        plural=plural,
+                    )
                     logging.info(f"Eventsource still deleting. Retry {count}")
                     time.sleep(5)
-                else:
+                except client.exceptions.ApiException:
                     logging.info("Eventsource deleted")
                     break
 
@@ -294,18 +293,17 @@ def create_sensor(api, resource, catalogue):
             count = 0
             while count < MAX_RETRIES:
                 count += 1
-                sensor = api.get_namespaced_custom_object(
-                    group=group,
-                    version=version,
-                    name=catalogue["sensor_name"],
-                    namespace=namespace,
-                    plural=plural,
-                )
-
-                if sensor:
+                try:
+                    api.get_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        name=catalogue["sensor_name"],
+                        namespace=namespace,
+                        plural=plural,
+                    )
                     logging.info(f"Sensor still deleting. Retry {count}")
                     time.sleep(5)
-                else:
+                except client.exceptions.ApiException as e:
                     logging.info("Sensor deleted")
                     break
 
