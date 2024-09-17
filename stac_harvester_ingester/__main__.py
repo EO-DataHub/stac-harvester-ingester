@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import time
 import traceback
 from contextlib import contextmanager
 from urllib.parse import urlparse
@@ -15,6 +16,9 @@ from pulsar import Client
 from slugify import slugify
 
 logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+
+
+MAX_RETRIES = 5
 
 
 def get_name(workspace, url):
@@ -230,6 +234,24 @@ def create_event_source(api, event_source_resource, catalogue):
                 body=client.V1DeleteOptions(),
             )
 
+            count = 0
+            while count < MAX_RETRIES:
+                count += 1
+                try:
+                    api.get_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        name=catalogue["event_source_name"],
+                        namespace=namespace,
+                        plural=plural,
+                    )
+                    logging.info(f"Eventsource still deleting. Retry {count}")
+                    time.sleep(5)
+                except client.exceptions.ApiException as e:
+                    if e.status == 404:
+                        logging.info("Eventsource deleted")
+                        break
+
             api.create_namespaced_custom_object(
                 group=group,
                 version=version,
@@ -268,6 +290,24 @@ def create_sensor(api, resource, catalogue):
                 plural=plural,
                 body=client.V1DeleteOptions(),
             )
+
+            count = 0
+            while count < MAX_RETRIES:
+                count += 1
+                try:
+                    api.get_namespaced_custom_object(
+                        group=group,
+                        version=version,
+                        name=catalogue["sensor_name"],
+                        namespace=namespace,
+                        plural=plural,
+                    )
+                    logging.info(f"Sensor still deleting. Retry {count}")
+                    time.sleep(5)
+                except client.exceptions.ApiException as e:
+                    if e.status == 404:
+                        logging.info("Sensor deleted")
+                        break
 
             api.create_namespaced_custom_object(
                 group=group,
