@@ -142,7 +142,7 @@ def create_sensor_spec(catalogue, uid):
                                                             {
                                                                 "name": "TOPIC",
                                                                 "value": os.environ.get(
-                                                                    "HARVESTER_TOPIC", "bulk"
+                                                                    "HARVESTER_TOPIC", ""
                                                                 ),
                                                             },
                                                         ],
