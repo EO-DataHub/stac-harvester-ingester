@@ -138,7 +138,13 @@ def create_sensor_spec(catalogue, uid):
                                                             {
                                                                 "name": "PULSAR_URL",
                                                                 "value": "pulsar://pulsar-broker.pulsar:6650",
-                                                            }
+                                                            },
+                                                            {
+                                                                "name": "TOPIC",
+                                                                "value": os.environ.get(
+                                                                    "HARVESTER_TOPIC", ""
+                                                                ),
+                                                            },
                                                         ],
                                                     }
                                                 ],
