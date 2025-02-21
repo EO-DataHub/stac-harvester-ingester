@@ -21,7 +21,12 @@ def mock_environment_variables():
 
 @pytest.fixture
 def mock_catalogue():
-    contents = {"id": "my_id", "url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
+    contents = {
+        "id": "my_id",
+        "url": "https://www.my-url.com/path",
+        "path": "path",
+        "schedule": "*/10 * * * *",
+    }
     return define_catalogue(json.dumps(contents), "my_workspace")
 
 
