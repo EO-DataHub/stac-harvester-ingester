@@ -37,7 +37,7 @@ def create_stac_harvester_custom_resource_spec(catalogue):
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["stac_harvester_name"]},
         "spec": {
-            "catalogue-id": catalogue["id"],
+            "id": catalogue["id"],
             "source-url": catalogue["url"],
             "catalogue-destination": catalogue["path"],
             "workspace": catalogue["workspace"],
@@ -133,7 +133,7 @@ def create_sensor_spec(catalogue, uid):
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\nid=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-id\']}" -n rc $harvester_name`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $id $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
+                                                            + '"`\nid=`kubectl get stac-harvesters -o jsonpath="{.spec[\'id\']}" -n rc $harvester_name`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $id $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
                                                         ],
                                                         "env": [
                                                             {
