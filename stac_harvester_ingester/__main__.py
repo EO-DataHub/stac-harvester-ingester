@@ -128,6 +128,7 @@ def create_sensor_spec(catalogue, uid):
                                                         "image": os.environ[
                                                             "STAC_HARVESTER_IMAGE_URL"
                                                         ],
+                                                        "imagePullPolicy": "Always",
                                                         "command": [
                                                             "/bin/sh",
                                                             "-c",
