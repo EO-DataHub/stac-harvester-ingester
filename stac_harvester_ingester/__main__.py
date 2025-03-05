@@ -124,15 +124,13 @@ def create_sensor_spec(catalogue, uid):
                                                 "containers": [
                                                     {
                                                         "name": "job",
-                                                        "image": os.environ[
-                                                            "STAC_HARVESTER_IMAGE_URL"
-                                                        ],
+                                                        "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
                                                         "command": [
                                                             "/bin/sh",
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
+                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\n opentelemetry-instrument --traces_exporter console --metrics_exporter console python3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
                                                         ],
                                                         "env": [
                                                             {
@@ -330,10 +328,10 @@ def create_sensor(api, resource, catalogue):
 def define_catalogue(contents, workspace):
     catalogue = json.loads(contents)
     catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
-    catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
-    catalogue["stac_harvester_name"] = f'sh-{catalogue["name"]}'
+    catalogue["sensor_name"] = f"sensor-{catalogue['name']}"
+    catalogue["stac_harvester_name"] = f"sh-{catalogue['name']}"
     catalogue["job_name"] = f"job-{catalogue['name']}"
-    catalogue["event_source_name"] = f'es-{catalogue["name"]}'
+    catalogue["event_source_name"] = f"es-{catalogue['name']}"
 
     for key in catalogue:
         if "name" in key:
