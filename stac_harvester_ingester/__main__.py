@@ -124,19 +124,15 @@ def create_sensor_spec(catalogue, uid):
                                                 "containers": [
                                                     {
                                                         "name": "job",
-                                                        "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
+                                                        "image": os.environ[
+                                                            "STAC_HARVESTER_IMAGE_URL"
+                                                        ],
                                                         "command": [
                                                             "/bin/sh",
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\n'
-                                                            + "source_url=`kubectl get stac-harvesters -o jsonpath=\"{.spec['source-url']}\" -n rc $harvester_name`\n"
-                                                            + 'workspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\n'
-                                                            + "catalogue_destination=`kubectl get stac-harvesters -o jsonpath=\"{.spec['catalogue-destination']}\" -n rc $harvester_name`\n"
-                                                            + "bucket_name=`kubectl get stac-harvesters -o jsonpath=\"{.spec['bucket-name']}\" -n rc $harvester_name`\n\n"
-                                                            + 'echo "DEBUG: source_url=$source_url, workspace=$workspace, catalogue_destination=$catalogue_destination, bucket_name=$bucket_name"\n\n'
-                                                            + "opentelemetry-instrument --traces_exporter console --metrics_exporter console python3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n",  # noqa: E501
+                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\n opentelemetry-instrument --traces_exporter console --metrics_exporter console python3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
                                                         ],
                                                         "env": [
                                                             {
