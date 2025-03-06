@@ -37,10 +37,11 @@ def create_stac_harvester_custom_resource_spec(catalogue):
         "kind": "STACHarvester",
         "metadata": {"name": catalogue["stac_harvester_name"]},
         "spec": {
-            "id": catalogue["id"],
             "source-url": catalogue["url"],
             "catalogue-destination": catalogue["path"],
             "workspace": catalogue["workspace"],
+            "source": catalogue["source"],
+            "target": catalogue["target"],
             "bucket-name": catalogue["bucket_name"],
         },
     }

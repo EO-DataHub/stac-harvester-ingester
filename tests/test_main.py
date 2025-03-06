@@ -22,9 +22,10 @@ def mock_environment_variables():
 @pytest.fixture
 def mock_catalogue():
     contents = {
-        "id": "my_id",
         "url": "https://www.my-url.com/path",
         "path": "path",
+        "source": "source",
+        "target": "target",
         "schedule": "*/10 * * * *",
     }
     return define_catalogue(json.dumps(contents), "my_workspace")
@@ -62,7 +63,7 @@ def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
     resource = create_stac_harvester_custom_resource_spec(mock_catalogue)
 
     assert len(resource.keys()) == 4
-    assert len(resource["spec"].keys()) == 5
+    assert len(resource["spec"].keys()) == 6
 
 
 def test_create_event_source_spec(mock_catalogue):
