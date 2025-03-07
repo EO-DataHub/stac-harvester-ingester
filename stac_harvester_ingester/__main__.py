@@ -40,6 +40,8 @@ def create_stac_harvester_custom_resource_spec(catalogue):
             "source-url": catalogue["url"],
             "catalogue-destination": catalogue["path"],
             "workspace": catalogue["workspace"],
+            "source": catalogue["source"],
+            "target": catalogue["target"],
             "bucket-name": catalogue["bucket_name"],
         },
     }
@@ -127,12 +129,13 @@ def create_sensor_spec(catalogue, uid):
                                                         "image": os.environ[
                                                             "STAC_HARVESTER_IMAGE_URL"
                                                         ],
+                                                        "imagePullPolicy": "Always",
                                                         "command": [
                                                             "/bin/sh",
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\ncatalogue_destination=`kubectl get stac-harvesters -o jsonpath="{.spec[\'catalogue-destination\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $source_url $workspace $catalogue_destination $bucket_name\n',  # noqa: E501
+                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\nsource=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source\']}" -n rc $harvester_name`\ntarget=`kubectl get stac-harvesters -o jsonpath="{.spec[\'target\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\npython3 -m stac_harvester $source_url $workspace $source $target $bucket_name\n',  # noqa: E501
                                                         ],
                                                         "env": [
                                                             {
