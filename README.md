@@ -1,7 +1,7 @@
 # stac-harvester-ingester
 
 ## Introduction
-The STAC Harvester Ingester harvests catalogue configuration files from an S3 bucket and creates a STAC Harvester for 
+The STAC Harvester Ingester takes catalogue configuration data from a pulsar message and creates a STAC Harvester for 
 each catalogue.
 
 It is designed to operate as part of a data pipeline, receiving a pulsar message containing details about the 
