@@ -2,7 +2,7 @@
 
 ## v0.1.8 (2025-11-26)
 
-## Changed
+### Changed
 
 - Migrate Python package management to uv
 
