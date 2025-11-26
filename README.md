@@ -21,15 +21,17 @@ on schedule.
 
 ## Getting started
 
-### Install via makefile
+### Prerequisites
+
+- [uv](https://docs.astral.sh/uv/) - Python package and project manager
+
+### Setup
 
 ```commandline
 make setup
 ```
 
-This will create a virtual environment called `venv`, build `requirements.txt` and
-`requirements-dev.txt` from `pyproject.toml` if they're out of date, install the Python
-and Node dependencies and install `pre-commit`.
+This will sync dependencies using uv and install pre-commit hooks.
 
 It's safe and fast to run `make setup` repeatedly as it will only update these things if
 they have changed.
@@ -60,7 +62,7 @@ The service is typically run as part of a data pipeline, but you can invoke it d
 Run the stac-harvester-ingester from the command line:
 
 ```sh
-./venv/bin/python -m stac_harvester_ingester
+uv run python -m stac_harvester_ingester
 ```
 
 ## Development
@@ -76,8 +78,6 @@ Useful Makefile targets:
 - `make test`: Run tests continuously.
 - `make testonce`: Run tests once.
 - `make lint`: Run all linters and formatters.
-- `make requirements`: Update requirements files from `pyproject.toml`.
-- `make requirements-update`: Update to the latest allowed versions.
 - `make dockerbuild`: Build a Docker image.
 - `make dockerpush`: Push a Docker image.
 

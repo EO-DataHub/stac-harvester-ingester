@@ -5,7 +5,7 @@ description = "Ingest harvested configuration files"
 readme = "README.md"
 
 # Our target version is Python 3.11, but it may work with earlier versions.
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 
 license = {file = "LICENSE"}
 
@@ -55,16 +55,17 @@ dependencies = [
     "python-slugify",
 ]
 
-# List additional groups of dependencies here (e.g. development
-# dependencies). Users will be able to install these using the "extras"
-# syntax, for example:
-#
-#   $ pip install sampleproject[dev]
-#
-# Similar to `dependencies` above, these must be valid existing
-# projects.
-[project.optional-dependencies] # Optional
-dev = ["pip-tools", "pytest", "pytest-xdist", "pytest-mock", "pytest-watcher", "black", "ruff", "isort", "pre-commit"]
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-xdist",
+    "pytest-mock",
+    "pytest-watcher",
+    "black",
+    "ruff",
+    "isort",
+    "pre-commit",
+]
 
 # List URLs that are relevant to your project
 #
