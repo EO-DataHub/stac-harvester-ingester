@@ -1,0 +1,15 @@
+*.env
+*.pyc
+
+__pycache__/
+.venv/
+.vscode/
+.ruff_cache/
+.pytest_cache/
+*.egg-info*
+
+# Pre-commit config is fetched from the EO-DataHub/github-actions repository
+.pre-commit-config.yaml
+
+# macOS files
+.DS_Store
