@@ -1,5 +1,11 @@
 # stac-harvester-ingester
 
+## v0.1.8 (2025-11-26)
+
+## Changed
+
+- Migrate Python package management to uv
+
 ## v0.1.7 (2025-03-07)
 - Refactored actions
 - Update source/target formatting
