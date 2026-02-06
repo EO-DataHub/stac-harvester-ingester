@@ -1,5 +1,7 @@
 import json
 import os
+from collections.abc import Generator
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -14,13 +16,13 @@ from stac_harvester_ingester.__main__ import (
 
 
 @pytest.fixture(autouse=True)
-def mock_environment_variables():
+def mock_environment_variables() -> Generator[None]:
     with mock.patch.dict(os.environ, {"STAC_HARVESTER_IMAGE_URL": "path-to.com/image-name"}):
         yield
 
 
 @pytest.fixture
-def mock_catalogue():
+def mock_catalogue() -> dict[str, Any]:
     contents = {
         "url": "https://www.my-url.com/path",
         "path": "path",
@@ -32,7 +34,7 @@ def mock_catalogue():
 
 
 @pytest.mark.parametrize(
-    "url, expected_name",
+    ("url", "expected_name"),
     [
         ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
         (
@@ -45,7 +47,7 @@ def mock_catalogue():
         ),
     ],
 )
-def test_get_name(url, expected_name, mock_catalogue):
+def test_get_name(url: str, expected_name: str, mock_catalogue: dict[str, Any]) -> None:
     workspace = "ws"
     actual_name = get_name(workspace, url)
 
@@ -56,7 +58,7 @@ def test_get_name(url, expected_name, mock_catalogue):
     assert len(actual_name) <= 63
 
 
-def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
+def test_create_stac_harvester_custom_resource_spec(mock_catalogue: dict[str, Any]) -> None:
     mock_catalogue["workspace"] = "test_workspace"
     mock_catalogue["bucket_name"] = "test_bucket"
 
@@ -66,7 +68,7 @@ def test_create_stac_harvester_custom_resource_spec(mock_catalogue):
     assert len(resource["spec"].keys()) == 6
 
 
-def test_create_event_source_spec(mock_catalogue):
+def test_create_event_source_spec(mock_catalogue: dict[str, Any]) -> None:
     mock_uid = "123"
     resource = create_event_source_spec(mock_catalogue, mock_uid)
 
@@ -74,7 +76,7 @@ def test_create_event_source_spec(mock_catalogue):
     assert len(resource["spec"].keys()) == 3
 
 
-def test_create_sensor_spec(mock_catalogue):
+def test_create_sensor_spec(mock_catalogue: dict[str, Any]) -> None:
     mock_uid = "123"
     resource = create_sensor_spec(mock_catalogue, mock_uid)
 
@@ -82,7 +84,7 @@ def test_create_sensor_spec(mock_catalogue):
     assert len(resource["spec"].keys()) == 4
 
 
-def test_define_catalogue():
+def test_define_catalogue() -> None:
     contents = {"url": "https://www.my-url.com/path", "path": "path", "schedule": "*/10 * * * *"}
     catalogue = define_catalogue(json.dumps(contents), "my_workspace")
 

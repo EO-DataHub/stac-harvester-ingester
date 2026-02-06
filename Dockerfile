@@ -1,8 +1,7 @@
-FROM ghcr.io/astral-sh/uv:0.9.12 AS uv
-FROM python:3.11-slim-bullseye
+# syntax=docker/dockerfile:1
+FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV UV_NO_DEV=1
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -12,25 +11,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     procps \
     git
 
-# Install uv
-COPY --from=uv /uv /uvx /bin/
-
-WORKDIR /stac_harvester_ingester
+WORKDIR /app
 
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-install-project
 
-# Copy application code
-ADD LICENSE stac_harvester_ingester ./stac_harvester_ingester/
+# Copy project files
+COPY . /app
 
-# Install the project
-
+# Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-dev
+    uv sync --frozen
 
-ENTRYPOINT ["uv", "run", "--no-project", "python", "-m", "stac_harvester_ingester"]
+ENTRYPOINT ["uv", "run", "--no-sync", "python", "-m", "stac_harvester_ingester"]

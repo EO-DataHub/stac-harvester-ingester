@@ -4,13 +4,17 @@ import os
 import re
 import time
 import traceback
+from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any, cast
 from urllib.parse import urlparse
 
 import boto3
 import kubernetes
+from boto3.session import Session
 from eodhp_utils.pulsar.messages import get_message_data
 from kubernetes import client, config
+from kubernetes.client.exceptions import ApiException
 from kubernetes.dynamic.exceptions import NotFoundError
 from pulsar import Client
 from slugify import slugify
@@ -21,9 +25,10 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 MAX_RETRIES = 5
 
 
-def get_name(workspace, url):
+def get_name(workspace: str, url: str) -> str:
     parsed = urlparse(url)
-    name = parsed.hostname + parsed.path if parsed.path else parsed.hostname
+    hostname = parsed.hostname or ""
+    name = hostname + parsed.path if parsed.path else hostname
     name = f"{workspace}-{name}"
 
     name = slugify(name, max_length=56)  # 64-character limit minus length of "sensor-"
@@ -31,7 +36,7 @@ def get_name(workspace, url):
     return re.sub(r"[^0-9a-z-]", r"", name)
 
 
-def create_stac_harvester_custom_resource_spec(catalogue):
+def create_stac_harvester_custom_resource_spec(catalogue: dict[str, Any]) -> dict[str, Any]:
     return {
         "apiVersion": "core.telespazio-uk.io/v1",
         "kind": "STACHarvester",
@@ -47,7 +52,7 @@ def create_stac_harvester_custom_resource_spec(catalogue):
     }
 
 
-def create_event_source_spec(catalogue, uid):
+def create_event_source_spec(catalogue: dict[str, Any], uid: str) -> dict[str, Any]:
     return {
         "apiVersion": "argoproj.io/v1alpha1",
         "kind": "EventSource",
@@ -73,7 +78,7 @@ def create_event_source_spec(catalogue, uid):
     }
 
 
-def create_sensor_spec(catalogue, uid):
+def create_sensor_spec(catalogue: dict[str, Any], uid: str) -> dict[str, Any]:
     return {
         "apiVersion": "argoproj.io/v1alpha1",
         "kind": "Sensor",
@@ -126,16 +131,14 @@ def create_sensor_spec(catalogue, uid):
                                                 "containers": [
                                                     {
                                                         "name": "job",
-                                                        "image": os.environ[
-                                                            "STAC_HARVESTER_IMAGE_URL"
-                                                        ],
+                                                        "image": os.environ["STAC_HARVESTER_IMAGE_URL"],
                                                         "imagePullPolicy": "Always",
                                                         "command": [
                                                             "/bin/sh",
                                                             "-c",
                                                             'harvester_name=`echo "'
                                                             + catalogue["stac_harvester_name"]
-                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\nsource=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source\']}" -n rc $harvester_name`\ntarget=`kubectl get stac-harvesters -o jsonpath="{.spec[\'target\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\nuv run --no-project python -m stac_harvester $source_url $workspace $source $target $bucket_name\n',  # noqa: E501
+                                                            + '"`\nsource_url=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source-url\']}" -n rc $harvester_name`\nworkspace=`kubectl get stac-harvesters -o jsonpath="{.spec.workspace}" -n rc $harvester_name`\nsource=`kubectl get stac-harvesters -o jsonpath="{.spec[\'source\']}" -n rc $harvester_name`\ntarget=`kubectl get stac-harvesters -o jsonpath="{.spec[\'target\']}" -n rc $harvester_name`\nbucket_name=`kubectl get stac-harvesters -o jsonpath="{.spec[\'bucket-name\']}" -n rc $harvester_name`\n\nuv run --no-project python -m stac_harvester $source_url $workspace $source $target $bucket_name\n',
                                                         ],
                                                         "env": [
                                                             {
@@ -144,9 +147,7 @@ def create_sensor_spec(catalogue, uid):
                                                             },
                                                             {
                                                                 "name": "TOPIC",
-                                                                "value": os.environ.get(
-                                                                    "HARVESTER_TOPIC", ""
-                                                                ),
+                                                                "value": os.environ.get("HARVESTER_TOPIC", ""),
                                                             },
                                                         ],
                                                     }
@@ -166,7 +167,7 @@ def create_sensor_spec(catalogue, uid):
 
 
 @contextmanager
-def aipipe_resource_dclient(kind, api_version="ai-pipeline.org/v1alpha1"):
+def aipipe_resource_dclient(kind: str, api_version: str = "ai-pipeline.org/v1alpha1") -> Generator[Any]:
     """This returns a context-managed k8s Dynamic Client for the specified CRD"""
     with kubernetes.client.ApiClient() as k8s_client:
         dclient = kubernetes.dynamic.DynamicClient(k8s_client)
@@ -174,7 +175,7 @@ def aipipe_resource_dclient(kind, api_version="ai-pipeline.org/v1alpha1"):
         yield api
 
 
-def update_model(resource, version):
+def update_model(resource: dict[str, Any], version: str) -> None:
     with aipipe_resource_dclient("STACHarvester", api_version=version) as modelapi:
         try:
             existing_resource = modelapi.get(
@@ -197,7 +198,9 @@ def update_model(resource, version):
             modelapi.create(resource)
 
 
-def create_stac_harvester_custom_resource(api, resource, catalogue):
+def create_stac_harvester_custom_resource(
+    api: client.CustomObjectsApi, resource: dict[str, Any], catalogue: dict[str, Any]
+) -> dict[str, Any]:
     plural = "stac-harvesters"
     namespace = "rc"
     group = "core.telespazio-uk.io"
@@ -208,16 +211,21 @@ def create_stac_harvester_custom_resource(api, resource, catalogue):
     update_model(resource, version)
     logging.info("Resource check complete")
 
-    return api.get_namespaced_custom_object(
-        group=group,
-        version=version,
-        name=catalogue["stac_harvester_name"],
-        namespace=namespace,
-        plural=plural,
+    return cast(
+        dict[str, Any],
+        api.get_namespaced_custom_object(
+            group=group,
+            version=version,
+            name=catalogue["stac_harvester_name"],
+            namespace=namespace,
+            plural=plural,
+        ),
     )
 
 
-def create_event_source(api, event_source_resource, catalogue):
+def create_event_source(
+    api: client.CustomObjectsApi, event_source_resource: dict[str, Any], catalogue: dict[str, Any]
+) -> None:
     plural = "eventsources"
     namespace = "rc"
     group = "argoproj.io"
@@ -231,7 +239,7 @@ def create_event_source(api, event_source_resource, catalogue):
             body=event_source_resource,
         )
         logging.info("Eventsource custom resource created")
-    except client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:  # Already exists. Recreate
             logging.info("Eventsource custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
@@ -256,7 +264,7 @@ def create_event_source(api, event_source_resource, catalogue):
                     )
                     logging.info(f"Eventsource still deleting. Retry {count}")
                     time.sleep(5)
-                except client.exceptions.ApiException as e:
+                except ApiException as e:
                     if e.status == 404:
                         logging.info("Eventsource deleted")
                         break
@@ -273,7 +281,7 @@ def create_event_source(api, event_source_resource, catalogue):
             raise
 
 
-def create_sensor(api, resource, catalogue):
+def create_sensor(api: client.CustomObjectsApi, resource: dict[str, Any], catalogue: dict[str, Any]) -> None:
     namespace = "rc"
     plural = "sensors"
     group = "argoproj.io"
@@ -288,7 +296,7 @@ def create_sensor(api, resource, catalogue):
             body=resource,
         )
         logging.info("Sensor custom resource created")
-    except client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             logging.info("Sensor custom resource exists. Recreating")
             api.delete_namespaced_custom_object(
@@ -313,7 +321,7 @@ def create_sensor(api, resource, catalogue):
                     )
                     logging.info(f"Sensor still deleting. Retry {count}")
                     time.sleep(5)
-                except client.exceptions.ApiException as e:
+                except ApiException as e:
                     if e.status == 404:
                         logging.info("Sensor deleted")
                         break
@@ -330,13 +338,13 @@ def create_sensor(api, resource, catalogue):
             raise
 
 
-def define_catalogue(contents, workspace):
+def define_catalogue(contents: str, workspace: str) -> dict[str, Any]:
     catalogue = json.loads(contents)
     catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
-    catalogue["sensor_name"] = f'sensor-{catalogue["name"]}'
-    catalogue["stac_harvester_name"] = f'sh-{catalogue["name"]}'
+    catalogue["sensor_name"] = f"sensor-{catalogue['name']}"
+    catalogue["stac_harvester_name"] = f"sh-{catalogue['name']}"
     catalogue["job_name"] = f"job-{catalogue['name']}"
-    catalogue["event_source_name"] = f'es-{catalogue["name"]}'
+    catalogue["event_source_name"] = f"es-{catalogue['name']}"
 
     for key in catalogue:
         if "name" in key:
@@ -345,11 +353,11 @@ def define_catalogue(contents, workspace):
     return catalogue
 
 
-def main():
+def main() -> None:
     config.load_incluster_config()
 
     if os.getenv("AWS_ACCESS_KEY") and os.getenv("AWS_SECRET_ACCESS_KEY"):
-        session = boto3.session.Session(
+        session = Session(
             aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
             aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
         )
@@ -358,8 +366,9 @@ def main():
     else:
         s3 = boto3.client("s3")
 
-    if os.getenv("TOPIC"):
-        identifier = "_" + os.getenv("TOPIC")
+    topic = os.getenv("TOPIC")
+    if topic:
+        identifier = "_" + topic
     else:
         identifier = ""
 
@@ -392,9 +401,7 @@ def main():
                 logging.info(f"Creating resource: {catalogue['name']}")
 
                 stac_harvester_resource = create_stac_harvester_custom_resource_spec(catalogue)
-                stac_harvester = create_stac_harvester_custom_resource(
-                    api, stac_harvester_resource, catalogue
-                )
+                stac_harvester = create_stac_harvester_custom_resource(api, stac_harvester_resource, catalogue)
 
                 parent_uid = stac_harvester["metadata"]["uid"]
 
