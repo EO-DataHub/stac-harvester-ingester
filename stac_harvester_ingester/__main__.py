@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -31,9 +32,17 @@ def get_name(workspace: str, url: str) -> str:
     name = hostname + parsed.path if parsed.path else hostname
     name = f"{workspace}-{name}"
 
-    name = slugify(name, max_length=56)  # 64-character limit minus length of "sensor-"
+    # Sources that only differ in a long shared prefix (e.g. per-collection URLs under the same
+    # STAC API) would otherwise truncate to the same slug and silently collide. A hash of the
+    # full name is appended, with space reserved for it before truncating, so distinct sources
+    # always get distinct names.
+    digest = hashlib.sha256(name.encode()).hexdigest()[:8]
+    # 64-character limit minus length of "sensor-" minus length of "-" + digest
+    max_slug_length = 56 - len(digest) - 1
+    slug = slugify(name, max_length=max_slug_length)
+    slug = re.sub(r"[^0-9a-z-]", r"", slug)
 
-    return re.sub(r"[^0-9a-z-]", r"", name)
+    return f"{slug}-{digest}"
 
 
 def create_stac_harvester_custom_resource_spec(catalogue: dict[str, Any]) -> dict[str, Any]:

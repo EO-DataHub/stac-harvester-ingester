@@ -36,14 +36,14 @@ def mock_catalogue() -> dict[str, Any]:
 @pytest.mark.parametrize(
     ("url", "expected_name"),
     [
-        ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1"),
+        ("https://www.test-domain.com/path/1", "ws-www-test-domain-com-path-1-e28785af"),
         (
             "https://www.test-domain.com/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/long/path",
-            "ws-www-test-domain-com-this-is-a-very-very-very-very-ver",
+            "ws-www-test-domain-com-this-is-a-very-very-very-15446c6a",
         ),
         (
             "https://www.test-domain.com/THIS.PATH.HAS.DOTS.AND.CAPITALS",
-            "ws-www-test-domain-com-this-path-has-dots-and-capitals",
+            "ws-www-test-domain-com-this-path-has-dots-and-c-c0fc3bd8",
         ),
     ],
 )
@@ -51,11 +51,30 @@ def test_get_name(url: str, expected_name: str, mock_catalogue: dict[str, Any]) 
     workspace = "ws"
     actual_name = get_name(workspace, url)
 
-    if len(actual_name) <= 63:
-        assert actual_name == expected_name
-    else:
-        assert actual_name[:-8] == expected_name
+    assert actual_name == expected_name
     assert len(actual_name) <= 63
+
+
+def test_get_name_distinguishes_sources_sharing_a_long_prefix() -> None:
+    # Regression test: sources differing only after a long shared prefix (e.g. per-collection
+    # URLs under the same STAC API) must not truncate to the same name.
+    base = "https://api.stac.ceda.ac.uk/collections/"
+    names = {
+        get_name("default_workspace", base + collection)
+        for collection in [
+            "eocis-aerosol-slstr-daily-s3a",
+            "eocis-aerosol-slstr-daily-s3b",
+            "eocis-aerosol-slstr-monthly-s3a",
+            "eocis-chuk-geospatial-builtarea",
+            "eocis-chuk-geospatial-elevation",
+            "sentinel1",
+            "sentinel1_ard",
+            "sentinel2_ard",
+        ]
+    }
+
+    assert len(names) == 8
+    assert all(len(name) <= 63 for name in names)
 
 
 def test_create_stac_harvester_custom_resource_spec(mock_catalogue: dict[str, Any]) -> None:
