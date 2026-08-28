@@ -395,6 +395,8 @@ def main() -> None:
             data_dict = get_message_data(msg)
             bucket_name = data_dict.get("bucket_name")
             workspace = data_dict.get("workspace")
+            if workspace is None:
+                raise ValueError("Harvested message has no 'workspace' field")
 
             for key in data_dict["added_keys"] + data_dict["updated_keys"]:
                 logging.info(f"Key: {key}")
