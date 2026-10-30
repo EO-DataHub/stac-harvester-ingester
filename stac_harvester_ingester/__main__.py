@@ -121,9 +121,6 @@ def create_sensor_spec(catalogue: dict[str, Any], uid: str) -> dict[str, Any]:
                     "template": {
                         "name": "create-job-trigger",
                         "k8s": {
-                            "group": "batch",
-                            "version": "v1",
-                            "resource": "jobs",
                             "operation": "create",
                             "source": {
                                 "resource": {
@@ -347,13 +344,12 @@ def create_sensor(api: client.CustomObjectsApi, resource: dict[str, Any], catalo
             raise
 
 
-def define_catalogue(contents: str, workspace: str) -> dict[str, Any]:
-    catalogue = json.loads(contents)
-    catalogue["name"] = f"{get_name(workspace, catalogue['url'])}"
-    catalogue["sensor_name"] = f"sensor-{catalogue['name']}"
-    catalogue["stac_harvester_name"] = f"sh-{catalogue['name']}"
-    catalogue["job_name"] = f"job-{catalogue['name']}"
-    catalogue["event_source_name"] = f"es-{catalogue['name']}"
+def define_resource_names(catalogue: dict[str, Any], name: str) -> dict[str, Any]:
+    catalogue["name"] = name
+    catalogue["sensor_name"] = f"sensor-{name}"
+    catalogue["stac_harvester_name"] = f"sh-{name}"
+    catalogue["job_name"] = f"job-{name}"
+    catalogue["event_source_name"] = f"es-{name}"
 
     for key in catalogue:
         if "name" in key:
@@ -362,8 +358,102 @@ def define_catalogue(contents: str, workspace: str) -> dict[str, Any]:
     return catalogue
 
 
+def define_catalogue(contents: str, workspace: str) -> dict[str, Any]:
+    catalogue = json.loads(contents)
+    return define_resource_names(catalogue, get_name(workspace, catalogue["url"]))
+
+
+def remove_nulls(value: object) -> object:
+    if isinstance(value, dict):
+        return {k: remove_nulls(v) for k, v in value.items() if v is not None}
+    if isinstance(value, list):
+        return [remove_nulls(v) for v in value]
+    return value
+
+
+def reconcile_sensor(api: client.CustomObjectsApi, harvester: dict[str, Any], sensors: dict[str, Any]) -> None:
+    namespace = "rc"
+    plural = "sensors"
+    group = "argoproj.io"
+    version = "v1alpha1"
+
+    sh_name = harvester["metadata"]["name"]
+    if not sh_name.startswith("sh-"):
+        logging.warning(f"Skipping STACHarvester {sh_name}: name does not start with sh-")
+        return
+
+    catalogue = define_resource_names({}, sh_name.removeprefix("sh-"))
+    sensor_name = catalogue["sensor_name"]
+    uid = harvester["metadata"]["uid"]
+
+    sensor = sensors.get(sensor_name)
+    if sensor is None:
+        logging.warning(
+            f"Sensor {sensor_name} for STACHarvester {sh_name} is missing. "
+            "It will be created when the harvester's config next changes"
+        )
+        return
+
+    owners = sensor["metadata"].get("ownerReferences") or []
+    if not any(o.get("kind") == "STACHarvester" and o.get("uid") == uid for o in owners):
+        logging.warning(f"Skipping sensor {sensor_name}: not owned by STACHarvester {sh_name}")
+        return
+
+    desired = create_sensor_spec(catalogue, uid)["spec"]
+    stored = cast(dict[str, Any], remove_nulls(sensor.get("spec") or {}))
+    if stored == desired:
+        logging.debug(f"Sensor {sensor_name} is up to date")
+        return
+
+    # Null keys the generated spec drops so the merge patch removes them
+    body_spec: dict[str, Any] = {key: None for key in stored if key not in desired}
+    body_spec.update(desired)
+
+    logging.info(f"Updating sensor {sensor_name}")
+    api.patch_namespaced_custom_object(
+        group=group,
+        version=version,
+        namespace=namespace,
+        plural=plural,
+        name=sensor_name,
+        body={"spec": body_spec},
+    )
+
+
+def reconcile_sensors(api: client.CustomObjectsApi) -> None:
+    namespace = "rc"
+
+    try:
+        harvesters = cast(
+            dict[str, Any],
+            api.list_namespaced_custom_object(
+                group="core.telespazio-uk.io", version="v1", namespace=namespace, plural="stac-harvesters"
+            ),
+        )["items"]
+        sensor_items = cast(
+            dict[str, Any],
+            api.list_namespaced_custom_object(
+                group="argoproj.io", version="v1alpha1", namespace=namespace, plural="sensors"
+            ),
+        )["items"]
+    except Exception as e:
+        logging.error(f"Failed to list STACHarvesters or sensors: {e}")
+        return
+
+    sensors = {sensor["metadata"]["name"]: sensor for sensor in sensor_items}
+
+    for harvester in harvesters:
+        try:
+            reconcile_sensor(api, harvester, sensors)
+        except Exception as e:
+            logging.error(
+                f"Failed to update sensor for STACHarvester {harvester.get('metadata', {}).get('name')}: {e}"
+            )
+
+
 def main() -> None:
     config.load_incluster_config()
+    reconcile_sensors(client.CustomObjectsApi())
 
     if os.getenv("AWS_ACCESS_KEY") and os.getenv("AWS_SECRET_ACCESS_KEY"):
         session = Session(
