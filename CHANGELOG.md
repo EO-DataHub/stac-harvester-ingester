@@ -1,5 +1,11 @@
 # stac-harvester-ingester
 
+## v0.1.12 (2026-10-30)
+
+### Fixed
+
+- Update existing sensors to the current harvester image and spec on startup
+
 ## v0.1.8 (2025-11-26)
 
 ### Changed
